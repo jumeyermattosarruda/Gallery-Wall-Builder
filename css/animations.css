@@ -1,0 +1,119 @@
+/* ============================================================
+   ANIMATIONS — Keyframes + Motion tokens
+   ============================================================ */
+
+/* ── Keyframes ── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes toastOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(4px); }
+}
+
+@keyframes blobMorph {
+  0%   { border-radius: 40% 60% 55% 45% / 55% 45% 60% 40%; }
+  33%  { border-radius: 55% 45% 40% 60% / 45% 60% 40% 55%; }
+  66%  { border-radius: 45% 55% 60% 40% / 60% 40% 55% 45%; }
+  100% { border-radius: 40% 60% 55% 45% / 55% 45% 60% 40%; }
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes frameAppear {
+  from { opacity: 0; transform: scale(0.9); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -300px 0; }
+  100% { background-position: 300px 0; }
+}
+
+/* ── Applied animations ── */
+.animate-fade-up {
+  animation: fadeInUp var(--transition-slow) both;
+}
+
+.animate-fade-in {
+  animation: fadeIn var(--transition-normal) both;
+}
+
+.step-modal {
+  animation: modalIn 0.25s ease-out;
+}
+
+.wframe.just-added {
+  animation: frameAppear 0.2s ease-out;
+}
+
+.layout-card {
+  animation: fadeInUp 0.3s ease-out both;
+}
+
+/* Stagger layout cards */
+.layout-card:nth-child(2) { animation-delay: 30ms; }
+.layout-card:nth-child(3) { animation-delay: 60ms; }
+.layout-card:nth-child(4) { animation-delay: 90ms; }
+.layout-card:nth-child(5) { animation-delay: 120ms; }
+.layout-card:nth-child(6) { animation-delay: 150ms; }
+.layout-card:nth-child(7) { animation-delay: 180ms; }
+.layout-card:nth-child(8) { animation-delay: 210ms; }
+
+/* ── Decorative blob ── */
+.blob-deco {
+  position: absolute;
+  border-radius: 40% 60% 55% 45% / 55% 45% 60% 40%;
+  animation: blobMorph 8s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.35;
+}
+
+/* ── Loading skeleton ── */
+.skeleton {
+  background: linear-gradient(90deg, #f0ede8 25%, #e8e4de 50%, #f0ede8 75%);
+  background-size: 600px 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+/* ── Pulse for processing ── */
+.processing-pulse {
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

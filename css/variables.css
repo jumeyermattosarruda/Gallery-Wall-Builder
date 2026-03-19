@@ -1,0 +1,93 @@
+/* ============================================================
+   GALLERY WALL BUILDER — Design Tokens
+   Edit this file to retheme the entire app.
+   ============================================================ */
+
+:root {
+  /* Brand Colors */
+  --color-navy:    #003049;
+  --color-crimson: #D62828;
+  --color-orange:  #F77F00;
+  --color-cream:   #F7EDE2;
+  --color-sand:    #F6BD60;
+  --color-white:   #FFFFFF;
+
+  /* Semantic Colors */
+  --color-bg-primary:   var(--color-white);
+  --color-bg-surface:   var(--color-cream);
+  --color-text-primary: var(--color-navy);
+  --color-text-muted:   #003049CC;
+  --color-text-caption: #00304999;
+  --color-accent-cta:   var(--color-crimson);
+  --color-accent-hover: var(--color-orange);
+  --color-accent-tag:   var(--color-sand);
+
+  /* Surface Tokens */
+  --surface-card:      var(--color-white);
+  --surface-panel:     var(--color-cream);
+  --surface-highlight: #F6BD6033;
+
+  /* Border */
+  --border-subtle:  1px solid rgba(0, 48, 73, 0.08);
+  --border-light:   1px solid rgba(0, 48, 73, 0.14);
+  --border-medium:  1.5px solid rgba(0, 48, 73, 0.20);
+
+  /* Typography */
+  --font-display:   'TAN Kindred', Georgia, serif;
+  --font-primary:   'Poppins', sans-serif;
+  --font-secondary: 'Inter', sans-serif;
+
+  /* Font Sizes */
+  --fs-h1:      36px;
+  --fs-h2:      28px;
+  --fs-h3:      22px;
+  --fs-h4:      18px;
+  --fs-body:    16px;
+  --fs-label:   14px;
+  --fs-caption: 13px;
+  --fs-tooltip: 12px;
+
+  /* Spacing (8px base) */
+  --sp-micro: 4px;
+  --sp-xs:    8px;
+  --sp-sm:    16px;
+  --sp-md:    24px;
+  --sp-lg:    32px;
+  --sp-xl:    48px;
+  --sp-2xl:   64px;
+  --sp-3xl:   96px;
+
+  /* Radii */
+  --radius-btn:   8px;
+  --radius-card:  16px;
+  --radius-modal: 20px;
+  --radius-pill:  999px;
+
+  /* Shadows */
+  --shadow-card:   0 2px 12px rgba(0, 48, 73, 0.06);
+  --shadow-hover:  0 6px 24px rgba(0, 48, 73, 0.12);
+  --shadow-frame:  0 8px 32px rgba(0, 0, 0, 0.12);
+  --shadow-cta:    0 4px 16px rgba(214, 40, 40, 0.25);
+
+  /* Layout */
+  --sidebar-width:    260px;
+  --rpanel-width:     220px;
+  --topbar-height:    60px;
+  --max-content-width: 1280px;
+
+  /* Transitions */
+  --transition-fast:   150ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow:   400ms ease-out;
+}
+
+/* Dark wall option (toggled via JS) */
+[data-wall-theme="dark"] #wall {
+  background: #1a1a1a;
+}
+[data-wall-theme="linen"] #wall {
+  background: #f2ede5;
+}
+[data-wall-theme="sage"] #wall {
+  background: #d4ddd0;
+}

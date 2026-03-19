@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gallery Wall Builder: from image to IRL</title>
+  <meta name="description" content="Arrange your art. Visualize your gallery wall. Hang with confidence.">
+
+  <!-- Google Fonts: Poppins + Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/wall.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <!-- TAN Kindred: commercial font — replace src with your licensed copy -->
+  <style>
+    @font-face {
+      font-family: 'TAN Kindred';
+      src: local('TAN Kindred'),
+           url('assets/fonts/TANKindred.woff2') format('woff2'),
+           url('assets/fonts/TANKindred.woff') format('woff');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+  </style>
+
+  <!-- HEIC conversion library -->
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+
+  <!-- Background removal library (optional, ML-based — loads model on first use ~40MB) -->
+  <!-- Uncomment to enable AI background removal: -->
+  <!-- <script type="module">
+    import { removeBackground } from 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/background-removal.js';
+    window.bgRemoval = { removeBackground };
+  </script> -->
+</head>
+<body>
+<div id="app">
+
+  <!-- ══════════════════════════════════════════
+       TOP BAR
+       ══════════════════════════════════════════ -->
+  <header class="topbar">
+    <a href="#" class="topbar__logo" aria-label="Gallery Wall Builder home">
+      <div class="topbar__logo-mark" aria-hidden="true">🖼</div>
+      <span class="topbar__title brand-title">Gallery Wall Builder</span>
+    </a>
+
+    <span class="topbar__tagline">Arrange. Visualize. Hang.</span>
+
+    <!-- Progress bar (shown while processing images) -->
+    <div id="processingBar" style="display:none;flex:1;max-width:160px;margin:0 16px">
+      <div class="progress-bar">
+        <div class="progress-bar__fill" id="processingFill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- Step pills -->
+    <nav class="topbar__steps" aria-label="Steps">
+      <button class="step-pill active" data-step="1" onclick="activateStep(1)" aria-current="step">
+        <span class="step-num">1</span> Upload
+      </button>
+      <div class="step-divider" aria-hidden="true"></div>
+      <button class="step-pill" data-step="2" onclick="activateStep(2)">
+        <span class="step-num">2</span> Reference
+      </button>
+      <div class="step-divider" aria-hidden="true"></div>
+      <button class="step-pill" data-step="3" onclick="activateStep(3)">
+        <span class="step-num">3</span> Arrange
+      </button>
+    </nav>
+
+    <!-- Topbar actions -->
+    <div class="topbar__actions">
+      <button class="btn btn--ghost btn--sm" id="clearWallBtn" title="Clear all frames from wall">
+        Clear wall
+      </button>
+      <button class="btn btn--primary btn--sm" id="exportBtn" title="Export as PNG">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Export PNG
+      </button>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════
+       WORKSPACE
+       ══════════════════════════════════════════ -->
+  <div class="workspace">
+
+    <!-- ── LEFT SIDEBAR ── -->
+    <aside class="sidebar" aria-label="Frame library and layouts">
+
+      <!-- Tab navigation -->
+      <div class="sidebar__tabs" role="tablist">
+        <button class="sidebar__tab" role="tab" data-target="tabFrames" aria-selected="true">
+          Frames
+        </button>
+        <button class="sidebar__tab" role="tab" data-target="tabLayouts" aria-selected="false">
+          Layouts
+        </button>
+      </div>
+
+      <!-- ── TAB 1: Frames ── -->
+      <div class="sidebar__tab-panel" id="tabFrames" role="tabpanel">
+
+        <!-- Upload zone -->
+        <div class="sidebar__section">
+          <p class="section-label">Your frames</p>
+          <div class="upload-zone" id="uploadZone" role="button" tabindex="0"
+               aria-label="Upload frame images — drag or click">
+            <div class="upload-zone__icon" aria-hidden="true">🖼</div>
+            <p class="upload-zone__text">
+              <strong>Drop images here</strong><br>or click to browse
+            </p>
+            <p class="upload-zone__sub">JPG · PNG · HEIC · WebP</p>
+            <input type="file" multiple accept="" aria-label="Choose image files">
+          </div>
+        </div>
+
+        <!-- Reference photo upload (compact) -->
+        <div class="sidebar__section">
+          <p class="section-label">Reference photo</p>
+          <div class="upload-zone upload-zone--reference" id="refUploadZone" role="button" tabindex="0"
+               aria-label="Upload group reference photo — drag or click">
+            <div class="upload-zone__icon" aria-hidden="true">📐</div>
+            <p class="upload-zone__text" style="font-size:12px">
+              <strong>Photo of frames together</strong><br>
+              <span style="font-size:11px;opacity:.75">Helps size them proportionally</span>
+            </p>
+            <input type="file" accept="" aria-label="Choose reference photo">
+          </div>
+        </div>
+
+        <!-- Frame library list -->
+        <div class="sidebar__scroll" id="framesList">
+          <div class="empty-state" id="framesEmpty">
+            <div class="empty-state__icon" aria-hidden="true">🎨</div>
+            <p class="empty-state__text">
+              Upload your frame photos<br>above to get started.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TAB 2: Layouts ── -->
+      <div class="sidebar__tab-panel" id="tabLayouts" role="tabpanel" style="display:none">
+        <div class="sidebar__section">
+          <p class="section-label">Gallery templates</p>
+          <p class="caption" style="margin-bottom:8px">Click a layout to apply it to the wall.</p>
+        </div>
+        <div class="sidebar__scroll" id="layoutsPanel" style="padding-bottom:16px"></div>
+      </div>
+
+    </aside>
+
+    <!-- ── CENTER: WALL CANVAS ── -->
+    <main class="center" aria-label="Gallery wall canvas">
+
+      <!-- Wall toolbar -->
+      <div class="wall-toolbar">
+
+        <div class="wall-toolbar__group">
+          <label class="label" for="wallSz" style="font-size:12px">Wall:</label>
+          <select id="wallSz" aria-label="Wall size preset">
+            <option value="820,540">Medium · 2.6×1.7m</option>
+            <option value="1000,540">Wide · 3.2×1.7m</option>
+            <option value="640,460">Small · 2.0×1.5m</option>
+            <option value="1100,600">Large · 3.5×1.9m</option>
+            <option value="640,640">Square · 2.0×2.0m</option>
+          </select>
+        </div>
+
+        <div class="wall-toolbar__divider" aria-hidden="true"></div>
+
+        <div class="wall-toolbar__group">
+          <label class="label" for="gridSz" style="font-size:12px">Grid:</label>
+          <select id="gridSz" aria-label="Grid size">
+            <option value="0">None</option>
+            <option value="20" selected>20px</option>
+            <option value="40">40px</option>
+          </select>
+          <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer">
+            <input type="checkbox" id="snapCb" checked aria-label="Snap to grid">
+            Snap
+          </label>
+        </div>
+
+        <div class="wall-toolbar__divider" aria-hidden="true"></div>
+
+        <!-- Wall color themes -->
+        <div class="wall-toolbar__group" aria-label="Wall color">
+          <span class="label" style="font-size:12px">Wall:</span>
+          <div class="wall-theme-list" role="group" aria-label="Choose wall color">
+            <button class="wall-theme-btn" data-theme="white"     style="background:#ffffff" title="White" aria-label="White wall"></button>
+            <button class="wall-theme-btn" data-theme="off-white" style="background:#f8f6f1" title="Off-white" aria-label="Off-white wall"></button>
+            <button class="wall-theme-btn" data-theme="linen"     style="background:#f2ede5" title="Linen" aria-label="Linen wall"></button>
+            <button class="wall-theme-btn" data-theme="sage"      style="background:#d4ddd0" title="Sage" aria-label="Sage wall"></button>
+            <button class="wall-theme-btn" data-theme="dark"      style="background:#1a1a1a" title="Dark" aria-label="Dark wall"></button>
+          </div>
+        </div>
+
+        <div class="wall-toolbar__divider" aria-hidden="true"></div>
+
+        <button class="btn btn--ghost btn--sm btn--icon" id="guidesBtn" title="Toggle center guides" aria-label="Toggle center guides" aria-pressed="false">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 2v20M2 12h20"/>
+          </svg>
+        </button>
+
+        <!-- Selection badge -->
+        <span class="sel-badge" id="selBadge" style="display:none" aria-live="polite"></span>
+
+        <div style="margin-left:auto;font-size:11px;color:var(--color-text-caption)">
+          <kbd style="background:rgba(0,48,73,.08);padding:2px 5px;border-radius:4px;font-family:monospace">Shift</kbd> hold = lock aspect ratio when resizing &nbsp;·&nbsp;
+          <kbd style="background:rgba(0,48,73,.08);padding:2px 5px;border-radius:4px;font-family:monospace">Del</kbd> remove selected
+        </div>
+      </div>
+
+      <!-- Wall viewport -->
+      <div class="wall-viewport" id="wallViewport">
+        <div class="wall-wrapper">
+          <div id="wall" style="width:820px;height:540px" role="application" aria-label="Gallery wall canvas — drag frames here">
+            <canvas id="gridCanvas" aria-hidden="true"></canvas>
+            <!-- Drop hint -->
+            <div class="drop-hint" id="dropHint" aria-hidden="true">
+              <div class="drop-hint__icon">🖼</div>
+              <p class="drop-hint__text">
+                Drop frames here<br>
+                or click <strong>+</strong> in the library<br>
+                <br>
+                <span style="font-size:11px;opacity:.7">Or pick a layout →</span>
+              </p>
+            </div>
+          </div>
+          <p class="wall-size-label" aria-live="polite"></p>
+        </div>
+      </div>
+    </main>
+
+    <!-- ── RIGHT PANEL: PROPERTIES ── -->
+    <aside class="rpanel" aria-label="Frame properties">
+      <p class="section-label">Properties</p>
+
+      <!-- No selection -->
+      <div id="noSel" class="empty-state" style="padding:20px 0">
+        <div class="empty-state__icon" aria-hidden="true">↖</div>
+        <p class="empty-state__text">
+          Click a frame on<br>the wall to edit it.
+        </p>
+      </div>
+
+      <!-- Selection controls -->
+      <div id="selProps" style="display:none">
+
+        <!-- Mini frame preview -->
+        <div style="margin-bottom:12px;text-align:center">
+          <img id="framePreviewImg" alt="" style="max-width:100%;max-height:80px;border-radius:6px;object-fit:contain;background:repeating-conic-gradient(#e8e4de 0% 25%,white 0% 50%) 0 0/12px 12px;display:none">
+          <p id="framePreviewName" class="caption truncate" style="margin-top:4px"></p>
+        </div>
+
+        <!-- Size -->
+        <div class="rpanel__group">
+          <label class="section-label">Size (px)</label>
+          <div class="input-row">
+            <input type="number" id="pw" min="40" max="800" placeholder="W" aria-label="Width in pixels">
+            <input type="number" id="ph" min="40" max="800" placeholder="H" aria-label="Height in pixels">
+          </div>
+        </div>
+
+        <!-- Frame color -->
+        <div class="rpanel__group">
+          <label class="section-label">Frame color</label>
+          <div class="color-swatches" id="colorPicker" role="group" aria-label="Choose frame color"></div>
+        </div>
+
+        <!-- Border thickness -->
+        <div class="rpanel__group">
+          <label class="section-label" for="pBorder">
+            Border: <strong id="borderVal">12</strong>px
+          </label>
+          <input type="range" id="pBorder" min="0" max="32" value="12" aria-valuemin="0" aria-valuemax="32" aria-label="Border thickness">
+        </div>
+
+        <!-- Rotation -->
+        <div class="rpanel__group">
+          <label class="section-label" for="pRot">
+            Rotation: <strong id="rotVal">0</strong>°
+          </label>
+          <input type="range" id="pRot" min="-15" max="15" value="0" step="0.5" aria-valuemin="-15" aria-valuemax="15" aria-label="Rotation angle">
+        </div>
+
+        <!-- Delete -->
+        <div class="rpanel__group">
+          <button class="btn btn--danger btn--sm" id="delFrameBtn" style="width:100%">
+            Remove from wall
+          </button>
+        </div>
+
+      </div>
+    </aside>
+
+  </div><!-- /workspace -->
+
+</div><!-- /app -->
+
+<!-- ══════════════════════════════════════════
+     REFERENCE PHOTO MODAL
+     ══════════════════════════════════════════ -->
+<div id="refPhotoModal" class="step-overlay hidden" role="dialog" aria-modal="true" aria-label="Tag frames in reference photo">
+  <div class="step-modal">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <h2 style="font-size:22px;margin-bottom:4px">Tag frames in reference photo</h2>
+        <p class="caption">Draw a box around each frame to measure relative sizes. Then assign each box to a frame in your library.</p>
+      </div>
+      <button class="btn btn--ghost btn--sm btn--icon" onclick="document.getElementById('refPhotoModal').classList.add('hidden')"
+              aria-label="Close">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Photo canvas -->
+    <div class="ref-photo-panel" style="margin-bottom:16px">
+      <canvas id="refCanvas" aria-label="Reference photo — draw boxes around each frame"></canvas>
+      <span class="ref-photo-hint" id="refPhotoHint" style="display:none">
+        Draw a box around each frame
+      </span>
+    </div>
+
+    <!-- Box list -->
+    <div style="margin-bottom:16px">
+      <p class="section-label" style="margin-bottom:8px">Identified frames</p>
+      <div id="refBoxList"></div>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn--ghost btn--sm" id="refClearBtn">Clear boxes</button>
+      <button class="btn btn--primary btn--sm" id="refApplyBtn">Apply sizes &amp; close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TOAST CONTAINER
+     ══════════════════════════════════════════ -->
+<div id="toastContainer" class="toast-container" aria-live="assertive" aria-atomic="true"></div>
+
+<!-- ══════════════════════════════════════════
+     SCRIPTS
+     ══════════════════════════════════════════ -->
+<script type="module" src="js/app.js"></script>
+
+<script>
+  /* Global step navigation (inline for non-module context) */
+  function activateStep(n) {
+    document.querySelectorAll('.step-pill').forEach((p, i) => {
+      p.classList.toggle('active', i + 1 === n);
+      p.classList.toggle('done',   i + 1 < n);
+      p.setAttribute('aria-current', i + 1 === n ? 'step' : 'false');
+    });
+
+    // Step 2: open ref photo modal
+    if (n === 2) {
+      document.getElementById('refPhotoModal')?.classList.remove('hidden');
+    }
+    // Step 3: switch to Layouts tab
+    if (n === 3) {
+      const layoutTab = document.querySelector('.sidebar__tab[data-target="tabLayouts"]');
+      if (layoutTab) layoutTab.click();
+    }
+  }
+</script>
+</body>
+</html>
