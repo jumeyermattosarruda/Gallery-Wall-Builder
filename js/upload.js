@@ -24,8 +24,8 @@ export async function loadFiles(files) {
   for (const file of arr) {
     try {
       const blob = await decodeFile(file);
+      const dims = await getImageDimensions(blob);
       const url  = URL.createObjectURL(blob);
-      const dims = await getImageDimensions(url);
 
       const frame = {
         id:          nextId('frame'),
@@ -64,8 +64,8 @@ export async function loadRefPhoto(file) {
   if (!isImageFile(file)) return;
   try {
     const blob = await decodeFile(file);
+    const dims = await getImageDimensions(blob);
     const url  = URL.createObjectURL(blob);
-    const dims = await getImageDimensions(url);
     return { src: url, w: dims.w, h: dims.h };
   } catch (err) {
     console.error('Could not load reference photo', err);
@@ -95,12 +95,21 @@ async function decodeFile(file) {
   return file;
 }
 
-function getImageDimensions(url) {
+async function getImageDimensions(blobOrUrl) {
+  // Prefer createImageBitmap for Blob/File — avoids blob-URL loading issues
+  // in deployed environments where img.src=blobUrl can be blocked.
+  if (blobOrUrl instanceof Blob) {
+    const bitmap = await createImageBitmap(blobOrUrl);
+    const result = { w: bitmap.width, h: bitmap.height };
+    bitmap.close();
+    return result;
+  }
+  // URL fallback
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload  = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
     img.onerror = reject;
-    img.src = url;
+    img.src = blobOrUrl;
   });
 }
 
