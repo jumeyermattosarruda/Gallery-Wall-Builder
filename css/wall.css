@@ -1,0 +1,268 @@
+/* ============================================================
+   WALL — Canvas, frame elements, drag/drop
+   ============================================================ */
+
+/* ── Wall canvas ── */
+#wall {
+  position: relative;
+  background: var(--color-white);
+  flex-shrink: 0;
+  border-radius: 4px;
+  box-shadow:
+    0 12px 60px rgba(0, 0, 0, 0.18),
+    0 3px 12px rgba(0, 0, 0, 0.1),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  /* subtle wall texture */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E");
+}
+
+#gridCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Drop hint ── */
+.drop-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-xs);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.drop-hint__icon {
+  font-size: 40px;
+  opacity: 0.18;
+}
+
+.drop-hint__text {
+  font-size: 13px;
+  font-family: var(--font-secondary);
+  color: rgba(0,48,73,0.3);
+  text-align: center;
+  line-height: 1.8;
+}
+
+/* ── Guide lines (center cross) ── */
+.guide-h, .guide-v {
+  position: absolute;
+  background: rgba(214,40,40,0.25);
+  pointer-events: none;
+  z-index: 3;
+  display: none;
+}
+.guide-h { height: 1px; left: 0; right: 0; }
+.guide-v { width: 1px; top: 0; bottom: 0; }
+#wall.show-guides .guide-h,
+#wall.show-guides .guide-v { display: block; }
+
+/* ── Wall frames ── */
+.wframe {
+  position: absolute;
+  z-index: 10;
+  cursor: grab;
+  user-select: none;
+  transform-origin: center center;
+}
+
+.wframe:active { cursor: grabbing; }
+
+/* Frame mat (inner area for image) */
+.wframe__mat {
+  position: absolute;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.wframe__mat img,
+.wframe__mat .wframe__ph {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.wframe__ph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-family: var(--font-secondary);
+  color: rgba(0,48,73,0.3);
+  text-align: center;
+  padding: var(--sp-xs);
+  background: var(--surface-panel);
+}
+
+/* Frame border element (renders the physical frame) */
+.wframe__border {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: 2px 6px 28px rgba(0,0,0,0.22), 0 1px 4px rgba(0,0,0,0.1);
+}
+
+/* Frame wire/hook suggestion (thin top line) */
+.wframe::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 8px;
+  background: rgba(0,48,73,0.3);
+  border-radius: 1px;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.wframe:hover::before { opacity: 1; }
+
+/* Selected state */
+.wframe.selected .wframe__border {
+  box-shadow:
+    0 0 0 2px var(--color-crimson),
+    2px 6px 28px rgba(0,0,0,0.22);
+}
+
+/* Resize handle */
+.wframe__rh {
+  position: absolute;
+  bottom: -5px;
+  right: -5px;
+  width: 14px;
+  height: 14px;
+  background: var(--color-crimson);
+  border-radius: 3px;
+  cursor: se-resize;
+  z-index: 20;
+  display: none;
+  box-shadow: 0 1px 4px rgba(214,40,40,0.4);
+}
+
+.wframe.selected .wframe__rh { display: block; }
+
+/* Rotate handle */
+.wframe__rot-handle {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 14px;
+  background: white;
+  border: 1.5px solid var(--color-crimson);
+  border-radius: 50%;
+  cursor: grab;
+  z-index: 20;
+  display: none;
+  box-shadow: var(--shadow-card);
+}
+
+.wframe.selected .wframe__rot-handle { display: block; }
+
+/* Label overlay */
+.wframe__label {
+  position: absolute;
+  bottom: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,48,73,0.8);
+  color: white;
+  font-size: 10px;
+  font-family: var(--font-secondary);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  display: none;
+  pointer-events: none;
+}
+
+.wframe.selected .wframe__label { display: block; }
+
+/* ── Dragging visual state ── */
+.wframe.dragging {
+  opacity: 0.9;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.25);
+  z-index: 100;
+}
+
+/* ── Slot placeholder (from layout templates) ── */
+.wframe.slot-placeholder .wframe__border {
+  background: var(--surface-panel);
+  border: 2px dashed rgba(0,48,73,0.14);
+  box-shadow: none;
+}
+
+.wframe.slot-placeholder .wframe__ph {
+  background: transparent;
+  color: rgba(0,48,73,0.25);
+  font-size: 12px;
+}
+
+/* ── Drop target highlight (when dragging from library) ── */
+#wall.drop-active {
+  box-shadow:
+    0 12px 60px rgba(0, 0, 0, 0.18),
+    0 0 0 3px rgba(214,40,40,0.35);
+}
+
+/* ══════════════════════════════════════════
+   WALL SIZE & LABEL
+   ══════════════════════════════════════════ */
+.wall-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.wall-size-label {
+  position: absolute;
+  bottom: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  font-family: var(--font-secondary);
+  color: rgba(0,48,73,0.35);
+  white-space: nowrap;
+}
+
+/* ══════════════════════════════════════════
+   REFERENCE PHOTO TAGGING CANVAS
+   ══════════════════════════════════════════ */
+#refCanvas {
+  display: block;
+  cursor: crosshair;
+  border-radius: 8px;
+  max-width: 100%;
+  max-height: 340px;
+  object-fit: contain;
+}
+
+.ref-tag-box {
+  position: absolute;
+  border: 2px solid var(--color-orange);
+  border-radius: 4px;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.ref-tag-num {
+  background: var(--color-orange);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 5px;
+  line-height: 1.2;
+}
