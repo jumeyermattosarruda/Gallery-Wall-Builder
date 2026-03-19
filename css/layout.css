@@ -31,11 +31,15 @@
   align-items: center;
   gap: var(--sp-xs);
   text-decoration: none;
+  overflow: hidden;
 }
 
 .topbar__logo-img {
-  width: 36px;
-  height: 36px;
+  display: block;
+  width: 32px;
+  height: 32px;
+  max-width: 32px;
+  max-height: 32px;
   object-fit: contain;
   flex-shrink: 0;
 }
