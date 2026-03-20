@@ -155,9 +155,11 @@ export function addToWall(fid, atX, atY) {
     color:  DEFAULT_FRAME_COLOR,
     border: DEFAULT_BORDER_WIDTH,
     rot:    0,
+    imgPanX: 50, imgPanY: 50, imgZoom: 1,
     label:  frame.name,
   };
 
+  saveHistory();
   state.wItems.push(item);
   mountWFrame(item);
   updateDropHint();
@@ -192,6 +194,7 @@ export function addToWallAt(fid, x, y, w, h) {
     color:  DEFAULT_FRAME_COLOR,
     border: DEFAULT_BORDER_WIDTH,
     rot:    0,
+    imgPanX: 50, imgPanY: 50, imgZoom: 1,
     label:  frame.name,
   };
 
@@ -283,12 +286,22 @@ function createFrameEl(item, frame) {
 function applyItemStyle(el, item) {
   el.style.cssText =
     `left:${item.x}px;top:${item.y}px;width:${item.w}px;height:${item.h}px;` +
-    `transform:rotate(${item.rot}deg);position:absolute;`;
+    `transform:rotate(${item.rot || 0}deg);position:absolute;`;
 
   const isSelected = state.selId === item.id;
+  el.classList.toggle('selected', isSelected);
 
   const mat = el.querySelector('.wframe__mat');
-  if (mat) mat.style.cssText = `position:absolute;inset:${item.border}px;overflow:hidden;`;
+  if (mat) {
+    mat.style.cssText = `position:absolute;inset:${item.border}px;overflow:hidden;`;
+    const img = mat.querySelector('img');
+    if (img) {
+      img.style.objectPosition = `${item.imgPanX ?? 50}% ${item.imgPanY ?? 50}%`;
+      const zoom = item.imgZoom ?? 1;
+      img.style.transform = zoom !== 1 ? `scale(${zoom})` : '';
+      img.style.transformOrigin = 'center center';
+    }
+  }
 
   const border = el.querySelector('.wframe__border');
   if (border) {
@@ -354,6 +367,7 @@ export function refreshWallFramesForFid(fid) {
 function startDrag(e, id) {
   const item = getWItem(id);
   if (!item) return;
+  saveHistory();
   state.drag = { id, ox: item.x, oy: item.y, mx: e.clientX, my: e.clientY };
   const el = document.getElementById(id);
   if (el) el.classList.add('dragging');
@@ -446,6 +460,7 @@ export function selectItem(id) {
   if (prev && prev !== id) refreshWFrame(prev);
   refreshWFrame(id);
   updateRightPanel();
+  import('./app.js').then(m => m.ensureRpanelOpen?.());
 
   const item  = getWItem(id);
   const frame = item ? getFrame(item.fid) : null;
@@ -470,6 +485,7 @@ export function deselect() {
    ────────────────────────────────────────── */
 export function deleteSelected() {
   if (!state.selId) return;
+  saveHistory();
   removeWItem(state.selId);
   state.selId = null;
   updateRightPanel();
@@ -484,6 +500,7 @@ function removeWItem(id) {
 }
 
 export function clearWall() {
+  if (state.wItems.length) saveHistory();
   state.wItems.forEach(i => {
     const el = document.getElementById(i.id);
     if (el) el.remove();
@@ -493,6 +510,33 @@ export function clearWall() {
   updateRightPanel();
   updateDropHint();
   refreshLibrary();
+}
+
+/* ──────────────────────────────────────────
+   UNDO HISTORY
+   ────────────────────────────────────────── */
+export function saveHistory() {
+  state.history.push(state.wItems.map(item => ({ ...item })));
+  if (state.history.length > 50) state.history.shift();
+}
+
+export function undo() {
+  if (!state.history.length) {
+    import('./app.js').then(m => m.toast('Nothing to undo', 'info'));
+    return;
+  }
+  const snapshot = state.history.pop();
+  state.wItems.forEach(item => {
+    const el = document.getElementById(item.id);
+    if (el) el.remove();
+  });
+  state.wItems = snapshot;
+  state.selId  = null;
+  snapshot.forEach(item => mountWFrame(item));
+  updateRightPanel();
+  updateDropHint();
+  refreshLibrary();
+  import('./app.js').then(m => m.toast('Undone', 'info'));
 }
 
 /* ──────────────────────────────────────────
