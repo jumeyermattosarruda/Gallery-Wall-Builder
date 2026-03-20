@@ -135,22 +135,24 @@
     2px 6px 28px rgba(0,0,0,0.22);
 }
 
-/* Resize handle */
+/* Resize handles — four corners */
 .wframe__rh {
   position: absolute;
-  bottom: -5px;
-  right: -5px;
-  width: 14px;
-  height: 14px;
+  width: 10px;
+  height: 10px;
   background: var(--color-crimson);
-  border-radius: 3px;
-  cursor: se-resize;
+  border-radius: 50%;
   z-index: 20;
   display: none;
   box-shadow: 0 1px 4px rgba(214,40,40,0.4);
 }
 
 .wframe.selected .wframe__rh { display: block; }
+
+.wframe__rh--nw { top: -5px;    left: -5px;  cursor: nw-resize; }
+.wframe__rh--ne { top: -5px;    right: -5px; cursor: ne-resize; }
+.wframe__rh--sw { bottom: -5px; left: -5px;  cursor: sw-resize; }
+.wframe__rh--se { bottom: -5px; right: -5px; cursor: se-resize; }
 
 /* Rotate handle */
 .wframe__rot-handle {

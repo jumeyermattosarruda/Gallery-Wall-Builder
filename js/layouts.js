@@ -163,22 +163,21 @@ export function buildLayoutPanel() {
     cvs.height = 120;
     renderLayoutPreview(cvs, layout);
 
-    const tagEl = document.createElement('span');
-    tagEl.className = 'tag tag--style';
-    tagEl.textContent = layout.tag;
-    tagEl.style.cssText = 'position:absolute;top:6px;right:6px;font-size:9px;padding:2px 7px';
-
     const nameEl = document.createElement('div');
     nameEl.className = 'layout-card__name';
     nameEl.textContent = layout.name;
 
-    const inner = document.createElement('div');
-    inner.style.position = 'relative';
-    inner.appendChild(cvs);
-    inner.appendChild(tagEl);
+    const tagEl = document.createElement('span');
+    tagEl.className = 'tag tag--style layout-card__tag';
+    tagEl.textContent = layout.tag;
 
-    card.appendChild(inner);
-    card.appendChild(nameEl);
+    const footer = document.createElement('div');
+    footer.className = 'layout-card__footer';
+    footer.appendChild(nameEl);
+    footer.appendChild(tagEl);
+
+    card.appendChild(cvs);
+    card.appendChild(footer);
 
     const apply = () => applyLayout(layout);
     card.addEventListener('click', apply);
