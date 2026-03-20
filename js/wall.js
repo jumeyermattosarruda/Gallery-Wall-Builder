@@ -51,7 +51,7 @@ export function initWall() {
 
   // Global mouse events for drag/resize
   document.addEventListener('mousemove', onMouseMove);
-  document.addEventListener('mouseup',   onMouseUp);
+  document.addEventListener('mouseup',   e => onMouseUp(e));
 
   // Keyboard
   document.addEventListener('keydown', onKeyDown);
@@ -376,33 +376,42 @@ export function showFrameShelf(unusedFrames, savedSettings) {
     return;
   }
 
+  unusedFrames.forEach(frame => addThumbToShelf(frame));
+}
+
+export function addThumbToShelf(frame) {
+  const shelf = document.getElementById('frameShelf');
+  if (!shelf) return;
+  // Ensure label exists
+  if (!shelf.querySelector('.shelf-label')) {
+    const label = document.createElement('span');
+    label.className = 'label shelf-label';
+    label.style.cssText = 'font-size:11px;opacity:0.7;white-space:nowrap;flex-shrink:0';
+    label.textContent = 'Unused — drag to wall or back to place:';
+    shelf.insertBefore(label, shelf.firstChild);
+  }
   shelf.style.display = '';
-  const label = document.createElement('span');
-  label.className = 'label';
-  label.style.cssText = 'font-size:11px;opacity:0.7;white-space:nowrap;flex-shrink:0';
-  label.textContent = 'Unused frames — drag to wall:';
-  shelf.appendChild(label);
 
-  unusedFrames.forEach(frame => {
-    const thumb = document.createElement('div');
-    thumb.className = 'shelf-thumb';
-    thumb.draggable = true;
-    thumb.title = frame.name;
+  const thumb = document.createElement('div');
+  thumb.className = 'shelf-thumb';
+  thumb.draggable = true;
+  thumb.title = frame.name;
+  thumb.dataset.fid = frame.id;
 
-    if (frame.src) {
-      const img = document.createElement('img');
-      img.src = frame.src;
-      img.alt = frame.name;
-      thumb.appendChild(img);
-    } else {
-      thumb.textContent = frame.name.slice(0, 2).toUpperCase();
-    }
+  if (frame.src) {
+    const img = document.createElement('img');
+    img.src = frame.src;
+    img.alt = frame.name;
+    img.draggable = false;
+    thumb.appendChild(img);
+  } else {
+    thumb.textContent = frame.name.slice(0, 2).toUpperCase();
+  }
 
-    thumb.addEventListener('dragstart', e => {
-      e.dataTransfer.setData('text/plain', frame.id);
-    });
-    shelf.appendChild(thumb);
+  thumb.addEventListener('dragstart', e => {
+    e.dataTransfer.setData('text/plain', frame.id);
   });
+  shelf.appendChild(thumb);
 }
 
 /* Public refresh (called by properties panel) */
@@ -430,6 +439,8 @@ export function refreshWallFramesForFid(fid) {
       mat.appendChild(img);
     }
     img.src = frame.src;
+    // Re-apply transform/pan — img element may have been recreated above
+    applyItemStyle(el, item);
   });
 }
 
@@ -452,6 +463,7 @@ function startDrag(e, id) {
 function startImgDrag(e, id) {
   const item = getWItem(id);
   if (!item) return;
+  saveHistory();
   state.imgDrag = {
     id,
     ox: item.imgPanX ?? 50,
@@ -508,6 +520,15 @@ function onMouseMove(e) {
     if (s) { nx = Math.round(nx / s) * s; ny = Math.round(ny / s) * s; }
     item.x = nx; item.y = ny;
     refreshWFrame(state.drag.id);
+
+    // Highlight shelf if dragging over it
+    const shelf = document.getElementById('frameShelf');
+    if (shelf && shelf.style.display !== 'none') {
+      const sr = shelf.getBoundingClientRect();
+      const over = e.clientX >= sr.left && e.clientX <= sr.right &&
+                   e.clientY >= sr.top  && e.clientY <= sr.bottom;
+      shelf.classList.toggle('shelf--drop-active', over);
+    }
   }
 
   if (state.resize) {
@@ -540,11 +561,37 @@ function onMouseMove(e) {
   }
 }
 
-function onMouseUp() {
+function onMouseUp(e) {
   if (state.imgDrag) { state.imgDrag = null; return; }
   if (state.drag) {
-    const el = document.getElementById(state.drag.id);
+    const dragId = state.drag.id;
+    const el = document.getElementById(dragId);
     if (el) el.classList.remove('dragging');
+
+    // Check if released over the frame shelf → return frame to shelf
+    const shelf = document.getElementById('frameShelf');
+    if (shelf && shelf.style.display !== 'none' && e) {
+      const sr = shelf.getBoundingClientRect();
+      if (e.clientX >= sr.left && e.clientX <= sr.right &&
+          e.clientY >= sr.top  && e.clientY <= sr.bottom) {
+        const item = getWItem(dragId);
+        if (item) {
+          saveHistory();
+          const frame = getFrame(item.fid);
+          removeWItem(dragId);
+          state.selId = null;
+          updateRightPanel();
+          updateDropHint();
+          refreshLibrary();
+          if (frame) addThumbToShelf(frame);
+        }
+        state.drag = null;
+        state.resize = null;
+        shelf.classList.remove('shelf--drop-active');
+        return;
+      }
+    }
+    if (shelf) shelf.classList.remove('shelf--drop-active');
     state.drag = null;
   }
   state.resize = null;

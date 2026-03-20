@@ -395,6 +395,51 @@
   pointer-events: none;
 }
 
+/* Drop highlight — user is dragging a frame over the shelf */
+.frame-shelf.shelf--drop-active {
+  border-color: var(--color-crimson);
+  background: rgba(214,40,40,0.06);
+  box-shadow: 0 0 0 2px rgba(214,40,40,0.2);
+}
+
+/* ── Reference photo overlay controls (toolbar) ── */
+.ref-overlay-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(0,48,73,0.05);
+  border: 1px solid rgba(0,48,73,0.12);
+  border-radius: 8px;
+}
+
+.ref-overlay-controls__label {
+  font-size: 11px;
+  font-family: var(--font-secondary);
+  color: var(--color-text-caption);
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.ref-overlay-controls__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ref-overlay-controls__opacity-label {
+  display: flex;
+  align-items: center;
+  color: var(--color-text-caption);
+  opacity: 0.7;
+}
+
+.ref-overlay-controls__slider {
+  width: 56px;
+  accent-color: var(--color-navy);
+  cursor: pointer;
+}
+
 /* ── Reference photo pane (below wall) ── */
 .ref-photo-strip {
   background: var(--color-white);

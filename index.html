@@ -228,12 +228,29 @@
         <!-- Selection badge -->
         <span class="sel-badge" id="selBadge" style="display:none" aria-live="polite"></span>
 
-        <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
-          <button id="refBgToggleBtn" class="btn btn--ghost btn--sm" style="display:none" title="Toggle reference photo overlay on wall">
-            👁 Ref overlay
-          </button>
-          <input id="refBgOpacity" type="range" min="10" max="80" value="30"
-                 style="width:60px;display:none" title="Overlay opacity" aria-label="Reference photo overlay opacity">
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <!-- Reference photo overlay controls (shown after ref photo uploaded) -->
+          <div id="refOverlayControls" class="ref-overlay-controls" style="display:none">
+            <span class="ref-overlay-controls__label">Reference photo overlay</span>
+            <div class="ref-overlay-controls__actions">
+              <button id="refBgToggleBtn" class="btn btn--icon btn--sm ref-bg-toggle" aria-pressed="true" title="Toggle overlay visibility">
+                <!-- eye-open icon -->
+                <svg id="iconEyeOpen" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <!-- eye-off icon (hidden by default) -->
+                <svg id="iconEyeClosed" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </button>
+              <button id="refBgRotCCWBtn" class="btn btn--icon btn--sm" title="Rotate 90° counter-clockwise" aria-label="Rotate overlay 90° CCW">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 2v6h6"/><path d="M2.66 15.57a10 10 0 1 0 .57-8.38"/></svg>
+              </button>
+              <button id="refBgRotCWBtn" class="btn btn--icon btn--sm" title="Rotate 90° clockwise" aria-label="Rotate overlay 90° CW">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.5 2v6h-6"/><path d="M21.34 15.57a10 10 0 1 1-.57-8.38"/></svg>
+              </button>
+              <label class="ref-overlay-controls__opacity-label" for="refBgOpacity" title="Overlay opacity">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" opacity=".35"/></svg>
+              </label>
+              <input id="refBgOpacity" type="range" min="5" max="80" value="30" class="ref-overlay-controls__slider" aria-label="Reference photo overlay opacity">
+            </div>
+          </div>
           <button id="showRpanelBtn" class="btn btn--ghost btn--sm" style="display:none" title="Show properties panel">
             Properties ▶
           </button>
@@ -252,7 +269,9 @@
           <div id="wall" style="width:820px;height:540px" role="application" aria-label="Gallery wall canvas — drag frames here">
             <canvas id="gridCanvas" aria-hidden="true"></canvas>
             <!-- Reference photo background overlay -->
-            <div id="wallRefBg" class="wall-ref-bg" style="display:none" aria-hidden="true"></div>
+            <div id="wallRefBg" class="wall-ref-bg" style="display:none" aria-hidden="true">
+              <img id="wallRefBgImg" alt="">
+            </div>
             <!-- Drop hint -->
             <div class="drop-hint" id="dropHint" aria-hidden="true">
               <div class="drop-hint__icon">🖼</div>
@@ -390,9 +409,16 @@
       <div id="refBoxList"></div>
     </div>
 
-    <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button class="btn btn--ghost btn--sm" id="refClearBtn">Clear boxes</button>
-      <button class="btn btn--primary btn--sm" id="refApplyBtn">Apply sizes &amp; close</button>
+    <div style="display:flex;gap:8px;justify-content:space-between;align-items:center">
+      <button class="btn btn--ghost btn--sm" id="refSkipBtn" style="opacity:0.7"
+              onclick="document.getElementById('refPhotoModal').classList.add('hidden')"
+              title="Skip frame tagging — reference photo still visible as overlay on wall">
+        Skip this step →
+      </button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn--ghost btn--sm" id="refClearBtn">Clear boxes</button>
+        <button class="btn btn--primary btn--sm" id="refApplyBtn">Apply sizes &amp; close</button>
+      </div>
     </div>
   </div>
 </div>

@@ -280,41 +280,83 @@ export function ensureRpanelOpen() {
 /* ──────────────────────────────────────────
    WALL REFERENCE PHOTO BACKGROUND
    ────────────────────────────────────────── */
+let _refBgRot     = 0;   // rotation in degrees (multiples of 90)
+let _refBgVisible = true;
+
+function setRefBgTransform() {
+  const img = document.getElementById('wallRefBgImg');
+  if (!img) return;
+  // Translate-center + rotate.  When rotated 90/270 deg we also need to swap
+  // dimensions so the image still fills the wall — scale compensates.
+  const rot = _refBgRot;
+  const needsSwap = rot === 90 || rot === 270;
+  const bg = document.getElementById('wallRefBg');
+  const scaleX = needsSwap && bg ? bg.offsetHeight / Math.max(bg.offsetWidth, 1) : 1;
+  const scaleY = needsSwap && bg ? bg.offsetWidth  / Math.max(bg.offsetHeight, 1) : 1;
+  const scale  = Math.max(scaleX, scaleY);
+  img.style.transform = `translate(-50%,-50%) rotate(${rot}deg) scale(${scale})`;
+}
+
+function updateRefBgIcon(visible) {
+  const open   = document.getElementById('iconEyeOpen');
+  const closed = document.getElementById('iconEyeClosed');
+  const btn    = document.getElementById('refBgToggleBtn');
+  if (open)   open.style.display   = visible ? '' : 'none';
+  if (closed) closed.style.display = visible ? 'none' : '';
+  if (btn) {
+    btn.setAttribute('aria-pressed', String(visible));
+    btn.classList.toggle('ref-bg-toggle--off', !visible);
+  }
+}
+
 function setupRefWallBg() {
-  const toggleBtn = document.getElementById('refBgToggleBtn');
-  const opSlider  = document.getElementById('refBgOpacity');
+  const toggleBtn  = document.getElementById('refBgToggleBtn');
+  const rotCCWBtn  = document.getElementById('refBgRotCCWBtn');
+  const rotCWBtn   = document.getElementById('refBgRotCWBtn');
+  const opSlider   = document.getElementById('refBgOpacity');
   if (!toggleBtn) return;
 
   toggleBtn.addEventListener('click', () => {
     const bg = document.getElementById('wallRefBg');
     if (!bg) return;
-    const hidden = bg.style.display === 'none' || !bg.style.display;
-    bg.style.display = hidden ? '' : 'none';
-    toggleBtn.classList.toggle('btn--accent', hidden);
+    _refBgVisible = !_refBgVisible;
+    bg.style.display = _refBgVisible ? '' : 'none';
+    updateRefBgIcon(_refBgVisible);
   });
 
-  if (opSlider) {
-    opSlider.addEventListener('input', () => {
-      const bg = document.getElementById('wallRefBg');
-      if (bg) bg.style.opacity = opSlider.value / 100;
-    });
-  }
+  rotCCWBtn?.addEventListener('click', () => {
+    _refBgRot = (_refBgRot - 90 + 360) % 360;
+    setRefBgTransform();
+  });
+
+  rotCWBtn?.addEventListener('click', () => {
+    _refBgRot = (_refBgRot + 90) % 360;
+    setRefBgTransform();
+  });
+
+  opSlider?.addEventListener('input', () => {
+    const bg = document.getElementById('wallRefBg');
+    if (bg) bg.style.opacity = opSlider.value / 100;
+  });
 }
 
 export function updateRefWallBg(src) {
+  const controls  = document.getElementById('refOverlayControls');
   const bg        = document.getElementById('wallRefBg');
-  const toggleBtn = document.getElementById('refBgToggleBtn');
-  const opSlider  = document.getElementById('refBgOpacity');
+  const img       = document.getElementById('wallRefBgImg');
   if (!bg) return;
   if (src) {
-    bg.style.backgroundImage = `url("${src}")`;
+    if (img) img.src = src;
+    _refBgRot     = 0;
+    _refBgVisible = true;
+    setRefBgTransform();
     bg.style.display = '';
-    if (toggleBtn) { toggleBtn.style.display = ''; toggleBtn.classList.add('btn--accent'); }
-    if (opSlider) opSlider.style.display = '';
+    bg.style.opacity = '0.3';
+    if (controls) controls.style.display = '';
+    updateRefBgIcon(true);
   } else {
     bg.style.display = 'none';
-    if (toggleBtn) { toggleBtn.style.display = 'none'; toggleBtn.classList.remove('btn--accent'); }
-    if (opSlider) opSlider.style.display = 'none';
+    if (controls) controls.style.display = 'none';
   }
 }
 

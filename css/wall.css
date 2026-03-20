@@ -28,14 +28,26 @@
 .wall-ref-bg {
   position: absolute;
   inset: 0;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  opacity: 0.3;
+  overflow: hidden;
   pointer-events: none;
   z-index: 4;
+  opacity: 0.3;
   transition: opacity 0.2s;
   border-radius: 4px;
+}
+
+.wall-ref-bg img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  /* transform set via JS: translate(-50%,-50%) rotate(Xdeg) scale(Y) */
+  transform: translate(-50%, -50%);
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: cover;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ── Drop hint ── */
