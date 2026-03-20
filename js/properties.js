@@ -7,6 +7,7 @@ import { refreshWFrame, deleteSelected } from './wall.js';
 
 /* Frame border color options */
 export const FRAME_COLORS = [
+  { name: 'None (transparent)', value: 'none' },
   { name: 'White',       value: '#f7f4f0' },
   { name: 'Cream',       value: '#ede8dc' },
   { name: 'Black',       value: '#1c1a18' },
@@ -131,8 +132,8 @@ function buildColorPicker() {
 
   FRAME_COLORS.forEach(c => {
     const s = document.createElement('button');
-    s.className = 'swatch';
-    s.style.background = c.value;
+    s.className = 'swatch' + (c.value === 'none' ? ' swatch--none' : '');
+    s.style.background = c.value === 'none' ? 'transparent' : c.value;
     s.title = c.name;
     s.setAttribute('aria-label', `Frame color: ${c.name}`);
     s.dataset.color = c.value;

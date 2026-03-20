@@ -57,6 +57,12 @@ export const state = {
 
   /* Undo history — array of wItems snapshots */
   history: [],
+
+  /* Redo stack — array of wItems snapshots */
+  future: [],
+
+  /* Image drag within frame (ephemeral) */
+  imgDrag: null,
 };
 
 export function nextId(prefix = 'id') {

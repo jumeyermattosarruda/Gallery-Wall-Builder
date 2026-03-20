@@ -138,6 +138,8 @@
           <p class="section-label">Reference photo</p>
           <div class="upload-zone upload-zone--reference" id="refUploadZone" role="button" tabindex="0"
                aria-label="Upload group reference photo — drag or click">
+            <!-- Preview once loaded -->
+            <img id="refSidebarPreview" alt="Reference photo" style="display:none;width:100%;max-height:120px;object-fit:contain;border-radius:6px;margin-bottom:6px">
             <div class="upload-zone__icon" aria-hidden="true">📐</div>
             <p class="upload-zone__text" style="font-size:12px">
               <strong>Photo of frames together</strong><br>
@@ -227,14 +229,18 @@
         <span class="sel-badge" id="selBadge" style="display:none" aria-live="polite"></span>
 
         <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
-          <button id="showRefPaneBtn" class="btn btn--ghost btn--sm" style="display:none" title="Show reference photo below wall">
-            📐 Reference
+          <button id="refBgToggleBtn" class="btn btn--ghost btn--sm" style="display:none" title="Toggle reference photo overlay on wall">
+            👁 Ref overlay
           </button>
+          <input id="refBgOpacity" type="range" min="10" max="80" value="30"
+                 style="width:60px;display:none" title="Overlay opacity" aria-label="Reference photo overlay opacity">
           <button id="showRpanelBtn" class="btn btn--ghost btn--sm" style="display:none" title="Show properties panel">
             Properties ▶
           </button>
           <span style="font-size:11px;color:var(--color-text-caption)">
-            <kbd style="background:rgba(0,48,73,.08);padding:2px 5px;border-radius:4px;font-family:monospace">⌘Z</kbd> undo &nbsp;·&nbsp;
+            <kbd style="background:rgba(0,48,73,.08);padding:2px 5px;border-radius:4px;font-family:monospace">⌘Z</kbd>
+            <kbd style="background:rgba(0,48,73,.08);padding:2px 5px;border-radius:4px;font-family:monospace">⌘⇧Z</kbd>
+            &nbsp;·&nbsp;
             <kbd style="background:rgba(0,48,73,.08);padding:2px 5px;border-radius:4px;font-family:monospace">Del</kbd> remove
           </span>
         </div>
@@ -245,6 +251,8 @@
         <div class="wall-wrapper">
           <div id="wall" style="width:820px;height:540px" role="application" aria-label="Gallery wall canvas — drag frames here">
             <canvas id="gridCanvas" aria-hidden="true"></canvas>
+            <!-- Reference photo background overlay -->
+            <div id="wallRefBg" class="wall-ref-bg" style="display:none" aria-hidden="true"></div>
             <!-- Drop hint -->
             <div class="drop-hint" id="dropHint" aria-hidden="true">
               <div class="drop-hint__icon">🖼</div>
@@ -258,19 +266,8 @@
           </div>
           <p class="wall-size-label" aria-live="polite"></p>
         </div>
-      </div>
-      <!-- Reference photo strip (collapsible) -->
-      <div id="refPhotoPane" class="ref-photo-strip" style="display:none">
-        <div class="ref-photo-strip__header">
-          <span class="label" style="font-size:12px">📐 Reference photo</span>
-          <button id="hideRefPaneBtn" class="btn btn--icon btn--sm" title="Hide reference photo" style="opacity:0.6">
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
-          </button>
-        </div>
-        <div class="ref-photo-strip__body">
-          <img id="refPaneImg" alt="Reference photo" style="max-height:160px;max-width:100%;object-fit:contain;border-radius:6px;display:none">
-          <p class="caption" id="refPaneEmpty" style="opacity:0.5;padding:8px">Upload a reference photo in Step 2 to see it here.</p>
-        </div>
+        <!-- Unused frames shelf (appears when layout has fewer slots than frames) -->
+        <div id="frameShelf" class="frame-shelf" style="display:none" aria-label="Unused frames — drag onto wall"></div>
       </div>
     </main>
 

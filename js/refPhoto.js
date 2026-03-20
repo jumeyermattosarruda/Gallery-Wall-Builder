@@ -40,7 +40,11 @@ export async function setRefPhoto(photoData) {
   state.refPhoto = photoData;
   state.refBoxes = [];
   renderRefCanvas();
-  import('./app.js').then(m => m.updateRefPhotoPane?.(photoData?.src));
+  import('./app.js').then(m => {
+    m.updateRefPhotoPane?.(photoData?.src);
+    m.updateRefWallBg?.(photoData?.src);
+    m.updateSidebarRefPhoto?.(photoData?.src);
+  });
 }
 
 /* ── Canvas render ── */
