@@ -21,7 +21,7 @@ export const FRAME_COLORS = [
 
 export function initProperties() {
   // Wire up input listeners
-  ['pw', 'ph', 'pBorder'].forEach(id => {
+  ['pw', 'ph', 'pBorder', 'pRot', 'pImgPanX', 'pImgPanY', 'pImgZoom'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', applySelProps);
   });
@@ -32,6 +32,31 @@ export function initProperties() {
   if (border && borderVal) {
     border.addEventListener('input', () => { borderVal.textContent = border.value; });
   }
+
+  const rot = document.getElementById('pRot');
+  const rotVal = document.getElementById('rotVal');
+  if (rot && rotVal) {
+    rot.addEventListener('input', () => { rotVal.textContent = rot.value; });
+  }
+
+  // 90° rotation buttons
+  document.getElementById('rotCCWBtn')?.addEventListener('click', () => rotateBy(-90));
+  document.getElementById('rotCWBtn')?.addEventListener('click',  () => rotateBy(90));
+
+  const imgZoom = document.getElementById('pImgZoom');
+  const imgZoomVal = document.getElementById('imgZoomVal');
+  if (imgZoom && imgZoomVal) {
+    imgZoom.addEventListener('input', () => { imgZoomVal.textContent = imgZoom.value + '%'; });
+  }
+
+  document.getElementById('imgResetBtn')?.addEventListener('click', () => {
+    if (!state.selId) return;
+    const item = getWItem(state.selId);
+    if (!item) return;
+    item.imgPanX = 50; item.imgPanY = 50; item.imgZoom = 1;
+    refreshWFrame(state.selId);
+    updateRightPanel();
+  });
 
   // Delete button
   const delBtn = document.getElementById('delFrameBtn');
@@ -65,7 +90,13 @@ function fillInputs(item) {
   set('pw', Math.round(item.w));
   set('ph', Math.round(item.h));
   set('pBorder', item.border);
+  set('pRot', item.rot || 0);
+  set('pImgPanX', item.imgPanX ?? 50);
+  set('pImgPanY', item.imgPanY ?? 50);
+  set('pImgZoom', Math.round((item.imgZoom ?? 1) * 100));
   setText('borderVal', item.border);
+  setText('rotVal',    item.rot || 0);
+  setText('imgZoomVal', Math.round((item.imgZoom ?? 1) * 100) + '%');
 }
 
 function applySelProps() {
@@ -82,7 +113,12 @@ function applySelProps() {
   const h = getNum('ph');
   if (w && w >= 40) item.w = w;
   if (h && h >= 40) item.h = h;
-  item.border = getNum('pBorder') ?? item.border;
+  item.border   = getNum('pBorder')   ?? item.border;
+  item.rot      = getNum('pRot')      ?? (item.rot || 0);
+  item.imgPanX  = getNum('pImgPanX')  ?? (item.imgPanX ?? 50);
+  item.imgPanY  = getNum('pImgPanY')  ?? (item.imgPanY ?? 50);
+  const rawZoom = getNum('pImgZoom');
+  if (rawZoom != null) item.imgZoom = rawZoom / 100;
 
   refreshWFrame(state.selId);
 }
@@ -116,6 +152,15 @@ function refreshColorPicker(item) {
   document.querySelectorAll('#colorPicker .swatch').forEach(s => {
     s.classList.toggle('active', s.dataset.color === item.color);
   });
+}
+
+function rotateBy(deg) {
+  if (!state.selId) return;
+  const item = getWItem(state.selId);
+  if (!item) return;
+  item.rot = ((item.rot || 0) + deg + 360) % 360;
+  refreshWFrame(state.selId);
+  updateRightPanel();
 }
 
 function updateImagePreview(item) {

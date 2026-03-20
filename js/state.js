@@ -54,6 +54,9 @@ export const state = {
   /* Drag/resize state (ephemeral) */
   drag: null,
   resize: null,
+
+  /* Undo history — array of wItems snapshots */
+  history: [],
 };
 
 export function nextId(prefix = 'id') {

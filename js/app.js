@@ -3,7 +3,7 @@
    ============================================================ */
 
 import { loadFiles, setupUploadZone, ACCEPTED, loadRefPhoto } from './upload.js';
-import { initWall, applyWallSize, redrawGrid, clearWall, setWallTheme, updateDropHint } from './wall.js';
+import { initWall, applyWallSize, redrawGrid, clearWall, setWallTheme, updateDropHint, undo } from './wall.js';
 import { initProperties } from './properties.js';
 import { buildLayoutPanel, applyLayout, LAYOUTS } from './layouts.js';
 import { exportWallPng } from './export.js';
@@ -24,11 +24,25 @@ document.addEventListener('DOMContentLoaded', () => {
   setupTopbarActions();
   setupWallThemes();
   setupSidebarTabs();
+  setupSidebarCollapse();
+  setupRpanelCollapse();
+  setupRefPhotoPane();
 
   // Initial state
   updateDropHint();
   applyWallSize();
   redrawGrid();
+});
+
+/* ──────────────────────────────────────────
+   KEYBOARD SHORTCUTS
+   ────────────────────────────────────────── */
+document.addEventListener('keydown', e => {
+  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+  if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+    e.preventDefault();
+    undo();
+  }
 });
 
 /* ──────────────────────────────────────────
@@ -175,16 +189,18 @@ export function toast(message, type = 'info') {
   const container = document.getElementById('toastContainer');
   if (!container) return;
 
+  const duration = type === 'success' ? 4500 : 3000;
+
   const el = document.createElement('div');
   el.className = `toast toast--${type}`;
   el.textContent = message;
   container.appendChild(el);
 
   setTimeout(() => {
-    el.style.transition = 'opacity 0.3s';
+    el.style.transition = 'opacity 0.4s';
     el.style.opacity    = '0';
-    setTimeout(() => el.remove(), 300);
-  }, 3000);
+    setTimeout(() => el.remove(), 400);
+  }, duration);
 }
 
 /** Update the progress bar (0–1) */
@@ -204,3 +220,72 @@ window.applyLayoutById = id => {
 
 window.appExport  = exportWallPng;
 window.appClear   = () => { if (state.wItems.length === 0 || confirm('Clear wall?')) clearWall(); };
+
+/* ──────────────────────────────────────────
+   SIDEBAR COLLAPSE
+   ────────────────────────────────────────── */
+function setupSidebarCollapse() {
+  const sidebar    = document.getElementById('sidebar');
+  const collapseBtn = document.getElementById('sidebarCollapseBtn');
+  const expandBtn  = document.getElementById('sidebarExpandBtn');
+  if (!sidebar || !collapseBtn || !expandBtn) return;
+
+  collapseBtn.addEventListener('click', () => {
+    sidebar.classList.add('collapsed');
+    expandBtn.style.display = '';
+  });
+  expandBtn.addEventListener('click', () => {
+    sidebar.classList.remove('collapsed');
+    expandBtn.style.display = 'none';
+  });
+}
+
+/* ──────────────────────────────────────────
+   RIGHT PANEL COLLAPSE
+   ────────────────────────────────────────── */
+function setupRpanelCollapse() {
+  const rpanel    = document.getElementById('rpanel');
+  const closeBtn  = document.getElementById('rpanelCloseBtn');
+  const showBtn   = document.getElementById('showRpanelBtn');
+  if (!rpanel || !closeBtn || !showBtn) return;
+
+  closeBtn.addEventListener('click', () => {
+    rpanel.classList.add('collapsed');
+    showBtn.style.display = '';
+  });
+  showBtn.addEventListener('click', () => {
+    rpanel.classList.remove('collapsed');
+    showBtn.style.display = 'none';
+  });
+}
+
+/* Auto-open rpanel when a frame is selected */
+export function ensureRpanelOpen() {
+  const rpanel  = document.getElementById('rpanel');
+  const showBtn = document.getElementById('showRpanelBtn');
+  if (!rpanel) return;
+  rpanel.classList.remove('collapsed');
+  if (showBtn) showBtn.style.display = 'none';
+}
+
+/* ──────────────────────────────────────────
+   REFERENCE PHOTO PANE (below wall)
+   ────────────────────────────────────────── */
+function setupRefPhotoPane() {
+  const pane     = document.getElementById('refPhotoPane');
+  const showBtn  = document.getElementById('showRefPaneBtn');
+  const hideBtn  = document.getElementById('hideRefPaneBtn');
+  if (!pane || !showBtn || !hideBtn) return;
+
+  showBtn.addEventListener('click', () => { pane.style.display = ''; showBtn.style.display = 'none'; });
+  hideBtn.addEventListener('click', () => { pane.style.display = 'none'; showBtn.style.display = ''; });
+}
+
+export function updateRefPhotoPane(src) {
+  const img      = document.getElementById('refPaneImg');
+  const empty    = document.getElementById('refPaneEmpty');
+  const showBtn  = document.getElementById('showRefPaneBtn');
+  if (img)     { img.src = src; img.style.display = src ? '' : 'none'; }
+  if (empty)   empty.style.display = src ? 'none' : '';
+  if (showBtn && src) showBtn.style.display = '';
+}

@@ -6,9 +6,10 @@ import { state } from './state.js';
 import { computeRelativeSizes } from './imageProcess.js';
 import { toast } from './app.js';
 
-let drawing  = false;
-let startPt  = null;
+let drawing    = false;
+let startPt    = null;
 let currentBox = null;
+let dragBox    = null; // { index, startPt, origBox }
 
 /**
  * Initialize the reference photo panel.
@@ -39,6 +40,7 @@ export async function setRefPhoto(photoData) {
   state.refPhoto = photoData;
   state.refBoxes = [];
   renderRefCanvas();
+  import('./app.js').then(m => m.updateRefPhotoPane?.(photoData?.src));
 }
 
 /* ── Canvas render ── */
@@ -60,8 +62,9 @@ function renderRefCanvas() {
   };
   img.src = state.refPhoto.src;
 
+  // Hide the hint to avoid overlapping the drawing area
   const hint = document.getElementById('refPhotoHint');
-  if (hint) hint.style.display = '';
+  if (hint) hint.style.display = 'none';
 }
 
 function drawBoxes(ctx, scale) {
@@ -108,24 +111,56 @@ function redrawCanvas() {
 
 /* ── Canvas mouse interactions ── */
 function getCanvasPos(canvas, e) {
-  const rect  = canvas.getBoundingClientRect();
-  const scale = canvas._scale || 1;
+  const rect = canvas.getBoundingClientRect();
+  // Account for CSS scaling (max-width/max-height may shrink the canvas display size)
+  const cssScaleX = canvas.width  / (rect.width  || canvas.width);
+  const cssScaleY = canvas.height / (rect.height || canvas.height);
+  const logicalScale = canvas._scale || 1;
   return {
-    x: (e.clientX - rect.left) / scale,
-    y: (e.clientY - rect.top)  / scale,
+    x: (e.clientX - rect.left) * cssScaleX / logicalScale,
+    y: (e.clientY - rect.top)  * cssScaleY / logicalScale,
   };
+}
+
+function hitTestBox(pt) {
+  for (let i = state.refBoxes.length - 1; i >= 0; i--) {
+    const b = state.refBoxes[i];
+    if (pt.x >= b.x && pt.x <= b.x + b.w && pt.y >= b.y && pt.y <= b.y + b.h) return i;
+  }
+  return -1;
 }
 
 function onCanvasMouseDown(e) {
   if (!state.refPhoto) return;
-  drawing = true;
-  startPt = getCanvasPos(this, e);
-  currentBox = { x: startPt.x, y: startPt.y, w: 0, h: 0, fid: null };
+  const pt  = getCanvasPos(this, e);
+  const hit = hitTestBox(pt);
+
+  if (hit >= 0) {
+    // Start dragging an existing box
+    dragBox = { index: hit, startPt: pt, origBox: { ...state.refBoxes[hit] } };
+    this.style.cursor = 'move';
+  } else {
+    // Start drawing a new box
+    drawing  = true;
+    startPt  = pt;
+    currentBox = { x: pt.x, y: pt.y, w: 0, h: 0, fid: null };
+  }
 }
 
 function onCanvasMouseMove(e) {
-  if (!drawing || !startPt || !state.refPhoto) return;
-  const pt  = getCanvasPos(this, e);
+  if (!state.refPhoto) return;
+  const pt = getCanvasPos(this, e);
+
+  if (dragBox) {
+    const dx = pt.x - dragBox.startPt.x;
+    const dy = pt.y - dragBox.startPt.y;
+    state.refBoxes[dragBox.index].x = dragBox.origBox.x + dx;
+    state.refBoxes[dragBox.index].y = dragBox.origBox.y + dy;
+    redrawCanvas();
+    return;
+  }
+
+  if (!drawing || !startPt) return;
   currentBox = {
     x:   Math.min(startPt.x, pt.x),
     y:   Math.min(startPt.y, pt.y),
@@ -137,9 +172,14 @@ function onCanvasMouseMove(e) {
 }
 
 function onCanvasMouseUp(e) {
+  if (dragBox) {
+    dragBox = null;
+    this.style.cursor = 'crosshair';
+    redrawCanvas();
+    return;
+  }
   if (!drawing || !currentBox) return;
   drawing = false;
-  // Only save if box is large enough
   if (currentBox.w > 10 && currentBox.h > 10) {
     state.refBoxes.push({ ...currentBox });
     assignBoxToFrame(state.refBoxes.length - 1);

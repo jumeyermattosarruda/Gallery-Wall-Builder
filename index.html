@@ -99,8 +99,11 @@
        ══════════════════════════════════════════ -->
   <div class="workspace">
 
+    <!-- Sidebar expand button (shown when sidebar collapsed) -->
+    <button id="sidebarExpandBtn" class="sidebar-expand-btn" style="display:none" title="Show sidebar" aria-label="Show sidebar">▶</button>
+
     <!-- ── LEFT SIDEBAR ── -->
-    <aside class="sidebar" aria-label="Frame library and layouts">
+    <aside class="sidebar" id="sidebar" aria-label="Frame library and layouts">
 
       <!-- Tab navigation -->
       <div class="sidebar__tabs" role="tablist">
@@ -110,6 +113,7 @@
         <button class="sidebar__tab" role="tab" data-target="tabLayouts" aria-selected="false">
           Layouts
         </button>
+        <button id="sidebarCollapseBtn" class="sidebar__collapse-btn" title="Hide sidebar" aria-label="Hide sidebar">◀</button>
       </div>
 
       <!-- ── TAB 1: Frames ── -->
@@ -222,9 +226,17 @@
         <!-- Selection badge -->
         <span class="sel-badge" id="selBadge" style="display:none" aria-live="polite"></span>
 
-        <div style="margin-left:auto;font-size:11px;color:var(--color-text-caption)">
-          <kbd style="background:rgba(0,48,73,.08);padding:2px 5px;border-radius:4px;font-family:monospace">Shift</kbd> hold = lock aspect ratio when resizing &nbsp;·&nbsp;
-          <kbd style="background:rgba(0,48,73,.08);padding:2px 5px;border-radius:4px;font-family:monospace">Del</kbd> remove selected
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+          <button id="showRefPaneBtn" class="btn btn--ghost btn--sm" style="display:none" title="Show reference photo below wall">
+            📐 Reference
+          </button>
+          <button id="showRpanelBtn" class="btn btn--ghost btn--sm" style="display:none" title="Show properties panel">
+            Properties ▶
+          </button>
+          <span style="font-size:11px;color:var(--color-text-caption)">
+            <kbd style="background:rgba(0,48,73,.08);padding:2px 5px;border-radius:4px;font-family:monospace">⌘Z</kbd> undo &nbsp;·&nbsp;
+            <kbd style="background:rgba(0,48,73,.08);padding:2px 5px;border-radius:4px;font-family:monospace">Del</kbd> remove
+          </span>
         </div>
       </div>
 
@@ -247,11 +259,29 @@
           <p class="wall-size-label" aria-live="polite"></p>
         </div>
       </div>
+      <!-- Reference photo strip (collapsible) -->
+      <div id="refPhotoPane" class="ref-photo-strip" style="display:none">
+        <div class="ref-photo-strip__header">
+          <span class="label" style="font-size:12px">📐 Reference photo</span>
+          <button id="hideRefPaneBtn" class="btn btn--icon btn--sm" title="Hide reference photo" style="opacity:0.6">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="ref-photo-strip__body">
+          <img id="refPaneImg" alt="Reference photo" style="max-height:160px;max-width:100%;object-fit:contain;border-radius:6px;display:none">
+          <p class="caption" id="refPaneEmpty" style="opacity:0.5;padding:8px">Upload a reference photo in Step 2 to see it here.</p>
+        </div>
+      </div>
     </main>
 
     <!-- ── RIGHT PANEL: PROPERTIES ── -->
-    <aside class="rpanel" aria-label="Frame properties">
-      <p class="section-label">Properties</p>
+    <aside class="rpanel" id="rpanel" aria-label="Frame properties">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <p class="section-label" style="margin:0">Properties</p>
+        <button id="rpanelCloseBtn" class="btn btn--icon btn--sm" title="Close properties" aria-label="Close properties" style="opacity:0.5">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
 
       <!-- No selection -->
       <div id="noSel" class="empty-state" style="padding:20px 0">
@@ -285,12 +315,38 @@
           <div class="color-swatches" id="colorPicker" role="group" aria-label="Choose frame color"></div>
         </div>
 
-        <!-- Border thickness -->
+        <!-- Frame mat thickness -->
         <div class="rpanel__group">
           <label class="section-label" for="pBorder">
-            Border: <strong id="borderVal">12</strong>px
+            Frame mat: <strong id="borderVal">12</strong>px
           </label>
-          <input type="range" id="pBorder" min="0" max="32" value="12" aria-valuemin="0" aria-valuemax="32" aria-label="Border thickness">
+          <input type="range" id="pBorder" min="0" max="40" value="12" aria-label="Frame mat thickness">
+        </div>
+
+        <!-- Rotation -->
+        <div class="rpanel__group">
+          <label class="section-label" for="pRot">
+            Rotation: <strong id="rotVal">0</strong>°
+          </label>
+          <input type="range" id="pRot" min="-180" max="180" value="0" step="1" aria-label="Rotation angle">
+          <div style="display:flex;gap:6px;margin-top:4px">
+            <button id="rotCCWBtn" class="btn btn--ghost btn--sm" style="flex:1;font-size:18px" title="Rotate 90° counter-clockwise">↺</button>
+            <button id="rotCWBtn"  class="btn btn--ghost btn--sm" style="flex:1;font-size:18px" title="Rotate 90° clockwise">↻</button>
+          </div>
+        </div>
+
+        <!-- Adjust image within frame -->
+        <div class="rpanel__group">
+          <label class="section-label">Adjust image</label>
+          <div style="display:grid;gap:4px">
+            <label class="caption" style="font-size:11px;color:var(--color-text-caption)">◀▶ Pan X</label>
+            <input type="range" id="pImgPanX" min="0" max="100" value="50" aria-label="Pan image horizontally">
+            <label class="caption" style="font-size:11px;color:var(--color-text-caption)">▲▼ Pan Y</label>
+            <input type="range" id="pImgPanY" min="0" max="100" value="50" aria-label="Pan image vertically">
+            <label class="caption" style="font-size:11px;color:var(--color-text-caption)">🔍 Zoom: <strong id="imgZoomVal">100%</strong></label>
+            <input type="range" id="pImgZoom" min="100" max="300" value="100" aria-label="Zoom image">
+            <button id="imgResetBtn" class="btn btn--ghost btn--sm" style="margin-top:2px">Reset image</button>
+          </div>
         </div>
 
         <!-- Delete -->
