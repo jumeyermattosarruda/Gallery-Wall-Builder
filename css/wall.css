@@ -24,6 +24,20 @@
   z-index: 1;
 }
 
+/* ── Reference photo background overlay ── */
+.wall-ref-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 4;
+  transition: opacity 0.2s;
+  border-radius: 4px;
+}
+
 /* ── Drop hint ── */
 .drop-hint {
   position: absolute;

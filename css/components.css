@@ -263,6 +263,19 @@ select {
   background: rgba(247,127,0,0.05);
 }
 
+/* When a reference photo is loaded — collapse the zone around the preview */
+.upload-zone--reference.has-photo .upload-zone__icon,
+.upload-zone--reference.has-photo .upload-zone__text,
+.upload-zone--reference.has-photo .upload-zone__sub {
+  display: none;
+}
+.upload-zone--reference.has-photo {
+  padding: 6px;
+}
+.upload-zone--reference.has-photo #refSidebarPreview {
+  display: block !important;
+}
+
 /* ══════════════════════════════════════════
    FRAME LIST ITEMS
    ══════════════════════════════════════════ */
@@ -435,6 +448,23 @@ select {
 .swatch.active {
   border-color: var(--color-crimson);
   box-shadow: 0 0 0 2px rgba(214,40,40,0.25);
+}
+
+/* "No color" swatch — checkerboard to indicate transparency */
+.swatch--none {
+  background: repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%) 0 0 / 8px 8px !important;
+  position: relative;
+}
+.swatch--none::after {
+  content: '×';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #999;
+  line-height: 1;
 }
 
 /* ══════════════════════════════════════════

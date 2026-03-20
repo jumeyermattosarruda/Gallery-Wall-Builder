@@ -3,7 +3,7 @@
    ============================================================ */
 
 import { loadFiles, setupUploadZone, ACCEPTED, loadRefPhoto } from './upload.js';
-import { initWall, applyWallSize, redrawGrid, clearWall, setWallTheme, updateDropHint, undo } from './wall.js';
+import { initWall, applyWallSize, redrawGrid, clearWall, setWallTheme, updateDropHint, undo, redo } from './wall.js';
 import { initProperties } from './properties.js';
 import { buildLayoutPanel, applyLayout, LAYOUTS } from './layouts.js';
 import { exportWallPng } from './export.js';
@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSidebarTabs();
   setupSidebarCollapse();
   setupRpanelCollapse();
-  setupRefPhotoPane();
+  setupRefWallBg();
 
   // Initial state
   updateDropHint();
@@ -42,6 +42,15 @@ document.addEventListener('keydown', e => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
     e.preventDefault();
     undo();
+  }
+  if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'z') {
+    e.preventDefault();
+    redo();
+  }
+  // Windows-style redo: Ctrl+Y
+  if ((e.metaKey || e.ctrlKey) && e.key === 'y') {
+    e.preventDefault();
+    redo();
   }
 });
 
@@ -269,23 +278,62 @@ export function ensureRpanelOpen() {
 }
 
 /* ──────────────────────────────────────────
-   REFERENCE PHOTO PANE (below wall)
+   WALL REFERENCE PHOTO BACKGROUND
    ────────────────────────────────────────── */
-function setupRefPhotoPane() {
-  const pane     = document.getElementById('refPhotoPane');
-  const showBtn  = document.getElementById('showRefPaneBtn');
-  const hideBtn  = document.getElementById('hideRefPaneBtn');
-  if (!pane || !showBtn || !hideBtn) return;
+function setupRefWallBg() {
+  const toggleBtn = document.getElementById('refBgToggleBtn');
+  const opSlider  = document.getElementById('refBgOpacity');
+  if (!toggleBtn) return;
 
-  showBtn.addEventListener('click', () => { pane.style.display = ''; showBtn.style.display = 'none'; });
-  hideBtn.addEventListener('click', () => { pane.style.display = 'none'; showBtn.style.display = ''; });
+  toggleBtn.addEventListener('click', () => {
+    const bg = document.getElementById('wallRefBg');
+    if (!bg) return;
+    const hidden = bg.style.display === 'none' || !bg.style.display;
+    bg.style.display = hidden ? '' : 'none';
+    toggleBtn.classList.toggle('btn--accent', hidden);
+  });
+
+  if (opSlider) {
+    opSlider.addEventListener('input', () => {
+      const bg = document.getElementById('wallRefBg');
+      if (bg) bg.style.opacity = opSlider.value / 100;
+    });
+  }
 }
 
-export function updateRefPhotoPane(src) {
-  const img      = document.getElementById('refPaneImg');
-  const empty    = document.getElementById('refPaneEmpty');
-  const showBtn  = document.getElementById('showRefPaneBtn');
-  if (img)     { img.src = src; img.style.display = src ? '' : 'none'; }
-  if (empty)   empty.style.display = src ? 'none' : '';
-  if (showBtn && src) showBtn.style.display = '';
+export function updateRefWallBg(src) {
+  const bg        = document.getElementById('wallRefBg');
+  const toggleBtn = document.getElementById('refBgToggleBtn');
+  const opSlider  = document.getElementById('refBgOpacity');
+  if (!bg) return;
+  if (src) {
+    bg.style.backgroundImage = `url("${src}")`;
+    bg.style.display = '';
+    if (toggleBtn) { toggleBtn.style.display = ''; toggleBtn.classList.add('btn--accent'); }
+    if (opSlider) opSlider.style.display = '';
+  } else {
+    bg.style.display = 'none';
+    if (toggleBtn) { toggleBtn.style.display = 'none'; toggleBtn.classList.remove('btn--accent'); }
+    if (opSlider) opSlider.style.display = 'none';
+  }
 }
+
+/* ──────────────────────────────────────────
+   SIDEBAR REFERENCE PHOTO DISPLAY
+   ────────────────────────────────────────── */
+export function updateSidebarRefPhoto(src) {
+  const zone    = document.getElementById('refUploadZone');
+  const preview = document.getElementById('refSidebarPreview');
+  if (!preview) return;
+  if (src) {
+    preview.src = src;
+    preview.style.display = '';
+    if (zone) zone.classList.add('has-photo');
+  } else {
+    preview.style.display = 'none';
+    if (zone) zone.classList.remove('has-photo');
+  }
+}
+
+/* Legacy — kept for compatibility, no-op now */
+export function updateRefPhotoPane() {}

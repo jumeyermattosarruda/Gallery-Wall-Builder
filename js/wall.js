@@ -167,8 +167,9 @@ export function addToWall(fid, atX, atY) {
   selectItem(item.id);
 }
 
-/* Add with explicit position & size (used by layout engine) */
-export function addToWallAt(fid, x, y, w, h) {
+/* Add with explicit position & size (used by layout engine).
+   Optional savedSettings preserves color/border/rot/pan/zoom from previous placement. */
+export function addToWallAt(fid, x, y, w, h, savedSettings) {
   const frame = getFrame(fid);
   if (!frame) return;
 
@@ -184,18 +185,21 @@ export function addToWallAt(fid, x, y, w, h) {
   const fx = x + Math.round((w - fw) / 2);
   const fy = y + Math.round((h - fh) / 2);
 
+  const saved = savedSettings || {};
   const item = {
-    id:     nextId('wi'),
+    id:      nextId('wi'),
     fid,
-    x:      fx,
-    y:      fy,
-    w:      fw,
-    h:      fh,
-    color:  DEFAULT_FRAME_COLOR,
-    border: DEFAULT_BORDER_WIDTH,
-    rot:    0,
-    imgPanX: 50, imgPanY: 50, imgZoom: 1,
-    label:  frame.name,
+    x:       fx,
+    y:       fy,
+    w:       fw,
+    h:       fh,
+    color:   saved.color   ?? DEFAULT_FRAME_COLOR,
+    border:  saved.border  ?? DEFAULT_BORDER_WIDTH,
+    rot:     saved.rot     ?? 0,
+    imgPanX: saved.imgPanX ?? 50,
+    imgPanY: saved.imgPanY ?? 50,
+    imgZoom: saved.imgZoom ?? 1,
+    label:   frame.name,
   };
 
   state.wItems.push(item);
@@ -293,31 +297,58 @@ function applyItemStyle(el, item) {
 
   const mat = el.querySelector('.wframe__mat');
   if (mat) {
-    mat.style.cssText = `position:absolute;inset:${item.border}px;overflow:hidden;`;
+    mat.style.cssText = `position:absolute;inset:${item.border}px;overflow:hidden;pointer-events:${isSelected ? 'auto' : 'none'};cursor:${isSelected ? 'move' : 'inherit'};`;
     const img = mat.querySelector('img');
     if (img) {
-      img.style.objectPosition = `${item.imgPanX ?? 50}% ${item.imgPanY ?? 50}%`;
+      // Use translate + scale so both X and Y pan always work regardless of
+      // the natural image aspect vs container aspect.
+      const panX = (item.imgPanX ?? 50) - 50; // -50..+50
+      const panY = (item.imgPanY ?? 50) - 50;
       const zoom = item.imgZoom ?? 1;
-      img.style.transform = zoom !== 1 ? `scale(${zoom})` : '';
+      img.style.objectPosition = '';
+      img.style.transform = `scale(${zoom}) translate(${panX}%, ${panY}%)`;
       img.style.transformOrigin = 'center center';
     }
   }
 
   const border = el.querySelector('.wframe__border');
   if (border) {
-    border.style.background  = item.color;
-    border.style.boxShadow   = isSelected
+    if (item.color === 'none' || item.color === 'transparent') {
+      border.style.background = 'transparent';
+    } else {
+      border.style.background = item.color;
+    }
+    border.style.boxShadow = isSelected
       ? `0 0 0 2.5px var(--color-crimson), 2px 8px 32px rgba(0,0,0,0.22)`
       : `2px 6px 28px rgba(0,0,0,0.2), 0 1px 4px rgba(0,0,0,0.1)`;
   }
 }
 
 function attachFrameEvents(el, item) {
+  // Frame-level mousedown — but NOT on the mat (handled separately below)
   el.addEventListener('mousedown', e => {
     if (e.target.classList.contains('wframe__rh')) return;
+    const mat = el.querySelector('.wframe__mat');
+    if (mat && (e.target === mat || mat.contains(e.target))) return;
     e.preventDefault();
     startDrag(e, item.id);
   });
+
+  // Image drag: mousedown directly on mat / img element
+  const mat = el.querySelector('.wframe__mat');
+  if (mat) {
+    mat.addEventListener('mousedown', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (state.selId === item.id) {
+        // Already selected → start panning the image
+        startImgDrag(e, item.id);
+      } else {
+        // Not yet selected → select and start frame drag
+        startDrag(e, item.id);
+      }
+    });
+  }
 
   el.querySelectorAll('.wframe__rh').forEach(rh => {
     rh.addEventListener('mousedown', e => {
@@ -330,6 +361,47 @@ function attachFrameEvents(el, item) {
   el.addEventListener('click', e => {
     e.stopPropagation();
     selectItem(item.id);
+  });
+}
+
+/* ──────────────────────────────────────────
+   FRAME SHELF — unused frames from layout
+   ────────────────────────────────────────── */
+export function showFrameShelf(unusedFrames, savedSettings) {
+  const shelf = document.getElementById('frameShelf');
+  if (!shelf) return;
+  shelf.innerHTML = '';
+  if (!unusedFrames.length) {
+    shelf.style.display = 'none';
+    return;
+  }
+
+  shelf.style.display = '';
+  const label = document.createElement('span');
+  label.className = 'label';
+  label.style.cssText = 'font-size:11px;opacity:0.7;white-space:nowrap;flex-shrink:0';
+  label.textContent = 'Unused frames — drag to wall:';
+  shelf.appendChild(label);
+
+  unusedFrames.forEach(frame => {
+    const thumb = document.createElement('div');
+    thumb.className = 'shelf-thumb';
+    thumb.draggable = true;
+    thumb.title = frame.name;
+
+    if (frame.src) {
+      const img = document.createElement('img');
+      img.src = frame.src;
+      img.alt = frame.name;
+      thumb.appendChild(img);
+    } else {
+      thumb.textContent = frame.name.slice(0, 2).toUpperCase();
+    }
+
+    thumb.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text/plain', frame.id);
+    });
+    shelf.appendChild(thumb);
   });
 }
 
@@ -375,6 +447,21 @@ function startDrag(e, id) {
 }
 
 /* ──────────────────────────────────────────
+   IMAGE PAN DRAG (move image within frame)
+   ────────────────────────────────────────── */
+function startImgDrag(e, id) {
+  const item = getWItem(id);
+  if (!item) return;
+  state.imgDrag = {
+    id,
+    ox: item.imgPanX ?? 50,
+    oy: item.imgPanY ?? 50,
+    mx: e.clientX,
+    my: e.clientY,
+  };
+}
+
+/* ──────────────────────────────────────────
    RESIZE
    ────────────────────────────────────────── */
 function startResize(e, id, corner) {
@@ -394,6 +481,24 @@ function startResize(e, id, corner) {
    MOUSE EVENTS
    ────────────────────────────────────────── */
 function onMouseMove(e) {
+  if (state.imgDrag) {
+    const item = getWItem(state.imgDrag.id);
+    if (!item) return;
+    const el = document.getElementById(state.imgDrag.id);
+    const mat = el?.querySelector('.wframe__mat');
+    const mw = mat ? mat.offsetWidth  : item.w;
+    const mh = mat ? mat.offsetHeight : item.h;
+    // Convert pixel delta to 0-100 range (50 = center).
+    // Factor 60 makes a drag across ~80% of the frame traverse the full range.
+    const dx = (e.clientX - state.imgDrag.mx) / mw * 60;
+    const dy = (e.clientY - state.imgDrag.my) / mh * 60;
+    item.imgPanX = Math.max(0, Math.min(100, state.imgDrag.ox + dx));
+    item.imgPanY = Math.max(0, Math.min(100, state.imgDrag.oy + dy));
+    refreshWFrame(state.imgDrag.id);
+    updateRightPanel();
+    return;
+  }
+
   if (state.drag) {
     const item = getWItem(state.drag.id);
     if (!item) return;
@@ -436,6 +541,7 @@ function onMouseMove(e) {
 }
 
 function onMouseUp() {
+  if (state.imgDrag) { state.imgDrag = null; return; }
   if (state.drag) {
     const el = document.getElementById(state.drag.id);
     if (el) el.classList.remove('dragging');
@@ -518,14 +624,10 @@ export function clearWall() {
 export function saveHistory() {
   state.history.push(state.wItems.map(item => ({ ...item })));
   if (state.history.length > 50) state.history.shift();
+  state.future = []; // new action clears redo stack
 }
 
-export function undo() {
-  if (!state.history.length) {
-    import('./app.js').then(m => m.toast('Nothing to undo', 'info'));
-    return;
-  }
-  const snapshot = state.history.pop();
+function restoreSnapshot(snapshot) {
   state.wItems.forEach(item => {
     const el = document.getElementById(item.id);
     if (el) el.remove();
@@ -536,7 +638,26 @@ export function undo() {
   updateRightPanel();
   updateDropHint();
   refreshLibrary();
+}
+
+export function undo() {
+  if (!state.history.length) {
+    import('./app.js').then(m => m.toast('Nothing to undo', 'info'));
+    return;
+  }
+  state.future.push(state.wItems.map(item => ({ ...item })));
+  restoreSnapshot(state.history.pop());
   import('./app.js').then(m => m.toast('Undone', 'info'));
+}
+
+export function redo() {
+  if (!state.future.length) {
+    import('./app.js').then(m => m.toast('Nothing to redo', 'info'));
+    return;
+  }
+  state.history.push(state.wItems.map(item => ({ ...item })));
+  restoreSnapshot(state.future.pop());
+  import('./app.js').then(m => m.toast('Redone', 'info'));
 }
 
 /* ──────────────────────────────────────────

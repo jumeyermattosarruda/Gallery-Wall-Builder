@@ -242,6 +242,21 @@ function roundRect(ctx, x, y, w, h, r) {
    sorted by real-world relative size.
    ────────────────────────────────────────── */
 export function applyLayout(layout) {
+  // Snapshot per-fid style settings before clearing the wall
+  const savedSettings = {};
+  state.wItems.forEach(item => {
+    if (item.fid) {
+      savedSettings[item.fid] = {
+        color:    item.color,
+        border:   item.border,
+        rot:      item.rot,
+        imgPanX:  item.imgPanX,
+        imgPanY:  item.imgPanY,
+        imgZoom:  item.imgZoom,
+      };
+    }
+  });
+
   clearWall();
 
   // Mark active layout card
@@ -264,11 +279,17 @@ export function applyLayout(layout) {
     const h = Math.round(slot.h * wh);
 
     if (sorted[i]) {
-      addToWallAt(sorted[i].id, x, y, w, h);
+      addToWallAt(sorted[i].id, x, y, w, h, savedSettings[sorted[i].id]);
     } else {
       mountPlaceholder(x, y, w, h, i + 1);
     }
   });
 
-  import('./wall.js').then(m => m.updateDropHint());
+  // Place unused frames (more frames than slots) in the shelf
+  const usedFids = new Set(sorted.slice(0, layout.slots.length).map(f => f.id));
+  const unused   = sorted.filter(f => !usedFids.has(f.id));
+  import('./wall.js').then(m => {
+    m.updateDropHint();
+    m.showFrameShelf?.(unused, savedSettings);
+  });
 }
