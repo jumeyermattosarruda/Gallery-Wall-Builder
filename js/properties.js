@@ -21,8 +21,7 @@ export const FRAME_COLORS = [
 
 export function initProperties() {
   // Wire up input listeners
-  const ids = ['pw', 'ph', 'pBorder', 'pRot'];
-  ids.forEach(id => {
+  ['pw', 'ph', 'pBorder'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', applySelProps);
   });
@@ -32,12 +31,6 @@ export function initProperties() {
   const borderVal = document.getElementById('borderVal');
   if (border && borderVal) {
     border.addEventListener('input', () => { borderVal.textContent = border.value; });
-  }
-
-  const rot = document.getElementById('pRot');
-  const rotVal = document.getElementById('rotVal');
-  if (rot && rotVal) {
-    rot.addEventListener('input', () => { rotVal.textContent = rot.value; });
   }
 
   // Delete button
@@ -72,9 +65,7 @@ function fillInputs(item) {
   set('pw', Math.round(item.w));
   set('ph', Math.round(item.h));
   set('pBorder', item.border);
-  set('pRot', item.rot);
   setText('borderVal', item.border);
-  setText('rotVal', item.rot);
 }
 
 function applySelProps() {
@@ -92,7 +83,6 @@ function applySelProps() {
   if (w && w >= 40) item.w = w;
   if (h && h >= 40) item.h = h;
   item.border = getNum('pBorder') ?? item.border;
-  item.rot    = getNum('pRot')    ?? item.rot;
 
   refreshWFrame(state.selId);
 }

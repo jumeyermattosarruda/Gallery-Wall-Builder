@@ -83,16 +83,39 @@ function isImageFile(file) {
 }
 
 async function decodeFile(file) {
-  const isHeic = /\.(heic|heif)$/i.test(file.name) ||
-                 file.type === 'image/heic' ||
-                 file.type === 'image/heif';
+  const isHeicByExt = /\.(heic|heif)$/i.test(file.name) ||
+                      file.type === 'image/heic' ||
+                      file.type === 'image/heif';
+  const isHeic = isHeicByExt || await isHeicByMagicBytes(file);
 
-  if (isHeic && window.heic2any) {
-    const converted = await window.heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 });
-    return Array.isArray(converted) ? converted[0] : converted;
+  if (isHeic) {
+    if (window.heic2any) {
+      try {
+        const converted = await window.heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 });
+        return Array.isArray(converted) ? converted[0] : converted;
+      } catch (e) {
+        console.warn('heic2any failed, trying native decode:', e);
+        // Fall through — Safari natively supports HEIC; other browsers will error at createImageBitmap
+      }
+    }
+    // Return raw file; createImageBitmap will attempt native decode
+    return file;
   }
 
   return file;
+}
+
+async function isHeicByMagicBytes(file) {
+  try {
+    const buf = await file.slice(0, 12).arrayBuffer();
+    const b   = new Uint8Array(buf);
+    // HEIC/HEIF files have 'ftyp' box at byte offset 4–7
+    if (b[4] === 0x66 && b[5] === 0x74 && b[6] === 0x79 && b[7] === 0x70) {
+      const brand = String.fromCharCode(b[8], b[9], b[10], b[11]);
+      return /heic|heix|hevc|hevx|mif1|msf1|avif/i.test(brand);
+    }
+  } catch {}
+  return false;
 }
 
 async function getImageDimensions(blobOrUrl) {
@@ -123,6 +146,8 @@ async function processFrame(frame) {
     frame.src       = processedUrl;
     frame.processed = true;
     refreshLibrary();
+    const { refreshWallFramesForFid } = await import('./wall.js');
+    refreshWallFramesForFid(frame.id);
   } catch (err) {
     // bg removal failed — keep original, mark as processed to stop spinner
     frame.processed = true;

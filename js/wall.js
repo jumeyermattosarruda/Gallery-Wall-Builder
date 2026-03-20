@@ -242,6 +242,10 @@ function createFrameEl(item, frame) {
   el.className = 'wframe';
   el.id = item.id;
 
+  // Border must come FIRST in DOM so mat (image) renders on top of it
+  const border = document.createElement('div');
+  border.className = 'wframe__border';
+
   const mat = document.createElement('div');
   mat.className = 'wframe__mat';
 
@@ -250,7 +254,6 @@ function createFrameEl(item, frame) {
     img.src = frame.src;
     img.alt = frame.name || '';
     img.draggable = false;
-    img.style.background = 'transparent';
     mat.appendChild(img);
   } else {
     const ph = document.createElement('div');
@@ -259,20 +262,19 @@ function createFrameEl(item, frame) {
     mat.appendChild(ph);
   }
 
-  const border = document.createElement('div');
-  border.className = 'wframe__border';
-
-  const rh = document.createElement('div');
-  rh.className = 'wframe__rh';
-  rh.title = 'Drag to resize';
-
   const label = document.createElement('div');
   label.className = 'wframe__label';
   label.textContent = item.label || '';
 
-  el.appendChild(mat);
   el.appendChild(border);
-  el.appendChild(rh);
+  el.appendChild(mat);
+  // Four corner resize handles
+  ['nw', 'ne', 'sw', 'se'].forEach(corner => {
+    const rh = document.createElement('div');
+    rh.className = 'wframe__rh wframe__rh--' + corner;
+    rh.dataset.corner = corner;
+    el.appendChild(rh);
+  });
   el.appendChild(label);
 
   return el;
@@ -304,14 +306,13 @@ function attachFrameEvents(el, item) {
     startDrag(e, item.id);
   });
 
-  const rh = el.querySelector('.wframe__rh');
-  if (rh) {
+  el.querySelectorAll('.wframe__rh').forEach(rh => {
     rh.addEventListener('mousedown', e => {
       e.preventDefault();
       e.stopPropagation();
-      startResize(e, item.id);
+      startResize(e, item.id, rh.dataset.corner);
     });
-  }
+  });
 
   el.addEventListener('click', e => {
     e.stopPropagation();
@@ -324,6 +325,27 @@ export function refreshWFrame(id) {
   const item = getWItem(id);
   const el   = document.getElementById(id);
   if (item && el) applyItemStyle(el, item);
+}
+
+/* Update image src in wall elements after background removal completes */
+export function refreshWallFramesForFid(fid) {
+  const frame = getFrame(fid);
+  if (!frame?.src) return;
+  state.wItems.filter(w => w.fid === fid).forEach(item => {
+    const el = document.getElementById(item.id);
+    if (!el) return;
+    const mat = el.querySelector('.wframe__mat');
+    if (!mat) return;
+    let img = mat.querySelector('img');
+    if (!img) {
+      img = document.createElement('img');
+      img.alt = frame.name || '';
+      img.draggable = false;
+      mat.innerHTML = '';
+      mat.appendChild(img);
+    }
+    img.src = frame.src;
+  });
 }
 
 /* ──────────────────────────────────────────
@@ -341,10 +363,17 @@ function startDrag(e, id) {
 /* ──────────────────────────────────────────
    RESIZE
    ────────────────────────────────────────── */
-function startResize(e, id) {
+function startResize(e, id, corner) {
   const item = getWItem(id);
   if (!item) return;
-  state.resize = { id, ox: e.clientX, oy: e.clientY, ow: item.w, oh: item.h, aspect: item.w / item.h };
+  state.resize = {
+    id,
+    corner: corner || 'se',
+    ox: e.clientX, oy: e.clientY,
+    ow: item.w,    oh: item.h,
+    ix: item.x,    iy: item.y,
+    aspect: item.w / item.h,
+  };
 }
 
 /* ──────────────────────────────────────────
@@ -365,13 +394,28 @@ function onMouseMove(e) {
   if (state.resize) {
     const item = getWItem(state.resize.id);
     if (!item) return;
-    let nw = Math.max(50, state.resize.ow + (e.clientX - state.resize.ox));
-    let nh = e.shiftKey
-      ? Math.round(nw / state.resize.aspect)
-      : Math.max(50, state.resize.oh + (e.clientY - state.resize.oy));
+    const { corner, ow, oh, ix, iy, aspect, ox, oy } = state.resize;
+    const dx = e.clientX - ox;
+    const dy = e.clientY - oy;
+
+    let nw = ow, nh = oh, nx = ix, ny = iy;
+
+    switch (corner) {
+      case 'se': nw = ow + dx; nh = oh + dy; break;
+      case 'sw': nw = ow - dx; nh = oh + dy; nx = ix + dx; break;
+      case 'ne': nw = ow + dx; nh = oh - dy; ny = iy + dy; break;
+      case 'nw': nw = ow - dx; nh = oh - dy; nx = ix + dx; ny = iy + dy; break;
+    }
+
+    if (e.shiftKey) nh = nw / aspect;
+
+    nw = Math.max(50, nw);
+    nh = Math.max(50, nh);
+
     const s = snapValue();
     if (s) { nw = Math.round(nw / s) * s; nh = Math.round(nh / s) * s; }
-    item.w = nw; item.h = nh;
+
+    item.w = nw; item.h = nh; item.x = nx; item.y = ny;
     refreshWFrame(state.resize.id);
     updateRightPanel();
   }
