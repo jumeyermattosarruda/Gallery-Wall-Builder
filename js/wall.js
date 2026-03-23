@@ -11,6 +11,72 @@ import { refreshLibrary } from './library.js';
    ────────────────────────────────────────── */
 const DEFAULT_FRAME_COLOR  = '#f7f4f0';
 const DEFAULT_BORDER_WIDTH = 12;
+const DEFAULT_FRAME_STYLE  = 'flat';
+
+/* ──────────────────────────────────────────
+   FRAME STYLE RENDERING
+   ────────────────────────────────────────── */
+/** Blend hex color toward white (+) or black (-). amount 0..1 */
+function blendHex(hex, toward, amount) {
+  if (!hex || hex === 'none' || hex === 'transparent') return hex || 'transparent';
+  const r = parseInt(hex.slice(1, 3), 16) || 0;
+  const g = parseInt(hex.slice(3, 5), 16) || 0;
+  const b = parseInt(hex.slice(5, 7), 16) || 0;
+  const t = toward === '#ffffff' ? 255 : 0;
+  const nr = Math.round(r + (t - r) * amount);
+  const ng = Math.round(g + (t - g) * amount);
+  const nb = Math.round(b + (t - b) * amount);
+  return `#${nr.toString(16).padStart(2,'0')}${ng.toString(16).padStart(2,'0')}${nb.toString(16).padStart(2,'0')}`;
+}
+
+function applyFrameStyle(border, item, isSelected) {
+  const c      = (item.color === 'none' || item.color === 'transparent') ? null : (item.color || DEFAULT_FRAME_COLOR);
+  const style  = item.frameStyle || 'flat';
+  const selShadowPrefix = isSelected ? '0 0 0 2.5px var(--color-crimson), ' : '';
+  const baseShadow = `${selShadowPrefix}2px 6px 28px rgba(0,0,0,0.2), 0 1px 4px rgba(0,0,0,0.1)`;
+
+  if (!c) {
+    border.style.background = 'transparent';
+    border.style.boxShadow  = baseShadow;
+    return;
+  }
+
+  switch (style) {
+    case 'bevel': {
+      // Chamfered/beveled picture-frame profile
+      const light = blendHex(c, '#ffffff', 0.45);
+      const dark  = blendHex(c, '#000000', 0.28);
+      border.style.background = `linear-gradient(145deg, ${light} 0%, ${c} 45%, ${dark} 100%)`;
+      border.style.boxShadow  = `${selShadowPrefix}inset 1px 1px 2px rgba(255,255,255,.35),inset -1px -1px 2px rgba(0,0,0,.2),2px 8px 24px rgba(0,0,0,.25)`;
+      break;
+    }
+    case 'baroque': {
+      // Ornate carved-gold look — repeating diagonal hatching + shadows
+      const light = blendHex(c, '#ffffff', 0.5);
+      const dark  = blendHex(c, '#000000', 0.38);
+      border.style.background = `repeating-linear-gradient(45deg,${light} 0px,${c} 3px,${dark} 5px,${c} 8px,${light} 11px)`;
+      border.style.boxShadow  = `${selShadowPrefix}inset 0 0 0 2px ${dark},inset 0 0 0 4px ${light},3px 10px 28px rgba(0,0,0,.32)`;
+      break;
+    }
+    case 'raised': {
+      // Raised / stepped moulding (white-modern style)
+      const light = blendHex(c, '#ffffff', 0.65);
+      const dark  = blendHex(c, '#000000', 0.18);
+      border.style.background = c;
+      border.style.boxShadow  = `${selShadowPrefix}inset 3px 3px 0 ${light},inset -3px -3px 0 ${dark},inset 6px 6px 0 rgba(255,255,255,.2),inset -6px -6px 0 rgba(0,0,0,.08),2px 8px 24px rgba(0,0,0,.2)`;
+      break;
+    }
+    case 'wood': {
+      // Oak-grain texture — overrides item color with warm wood tones
+      border.style.background = `repeating-linear-gradient(91deg,#c8a46e 0px,#dab87c 1px,#c4954a 3px,#c8a46e 5px,#e0c090 7px,#b8883c 9px,#c8a46e 11px,#dab87c 13px)`;
+      border.style.boxShadow  = `${selShadowPrefix}inset 0 1px 2px rgba(255,255,255,.2),2px 8px 24px rgba(0,0,0,.22)`;
+      break;
+    }
+    default: // 'flat'
+      border.style.background = c;
+      border.style.boxShadow  = baseShadow;
+  }
+}
 
 /* ──────────────────────────────────────────
    INIT
@@ -156,6 +222,7 @@ export function addToWall(fid, atX, atY) {
     border: DEFAULT_BORDER_WIDTH,
     rot:    0,
     imgPanX: 50, imgPanY: 50, imgZoom: 1,
+    frameStyle: DEFAULT_FRAME_STYLE,
     label:  frame.name,
   };
 
@@ -187,19 +254,20 @@ export function addToWallAt(fid, x, y, w, h, savedSettings) {
 
   const saved = savedSettings || {};
   const item = {
-    id:      nextId('wi'),
+    id:         nextId('wi'),
     fid,
-    x:       fx,
-    y:       fy,
-    w:       fw,
-    h:       fh,
-    color:   saved.color   ?? DEFAULT_FRAME_COLOR,
-    border:  saved.border  ?? DEFAULT_BORDER_WIDTH,
-    rot:     saved.rot     ?? 0,
-    imgPanX: saved.imgPanX ?? 50,
-    imgPanY: saved.imgPanY ?? 50,
-    imgZoom: saved.imgZoom ?? 1,
-    label:   frame.name,
+    x:          fx,
+    y:          fy,
+    w:          fw,
+    h:          fh,
+    color:      saved.color      ?? DEFAULT_FRAME_COLOR,
+    border:     saved.border     ?? DEFAULT_BORDER_WIDTH,
+    rot:        saved.rot        ?? 0,
+    imgPanX:    saved.imgPanX    ?? 50,
+    imgPanY:    saved.imgPanY    ?? 50,
+    imgZoom:    saved.imgZoom    ?? 1,
+    frameStyle: saved.frameStyle ?? DEFAULT_FRAME_STYLE,
+    label:      frame.name,
   };
 
   state.wItems.push(item);
@@ -312,16 +380,7 @@ function applyItemStyle(el, item) {
   }
 
   const border = el.querySelector('.wframe__border');
-  if (border) {
-    if (item.color === 'none' || item.color === 'transparent') {
-      border.style.background = 'transparent';
-    } else {
-      border.style.background = item.color;
-    }
-    border.style.boxShadow = isSelected
-      ? `0 0 0 2.5px var(--color-crimson), 2px 8px 32px rgba(0,0,0,0.22)`
-      : `2px 6px 28px rgba(0,0,0,0.2), 0 1px 4px rgba(0,0,0,0.1)`;
-  }
+  if (border) applyFrameStyle(border, item, isSelected);
 }
 
 function attachFrameEvents(el, item) {
