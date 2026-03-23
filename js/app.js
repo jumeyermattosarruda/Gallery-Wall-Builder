@@ -10,6 +10,7 @@ import { exportWallPng } from './export.js';
 import { initRefPhoto, setRefPhoto } from './refPhoto.js';
 import { refreshLibrary } from './library.js';
 import { state } from './state.js';
+import { initTour } from './tour.js';
 
 /* ──────────────────────────────────────────
    INIT
@@ -29,6 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setupRefWallBg();
   setupWallColorPicker();
   setupWallPhotoPicker();
+  setupRefHandles();
+  initTour();
 
   // Initial state
   updateDropHint();
@@ -330,10 +333,12 @@ function setupRefWallBg() {
   if (!toggleBtn) return;
 
   toggleBtn.addEventListener('click', () => {
-    const bg = document.getElementById('wallRefBg');
+    const bg      = document.getElementById('wallRefBg');
+    const handles = document.getElementById('wallRefHandles');
     if (!bg) return;
     _refBgVisible = !_refBgVisible;
-    bg.style.display = _refBgVisible ? '' : 'none';
+    bg.style.display      = _refBgVisible ? '' : 'none';
+    if (handles) handles.style.display = _refBgVisible ? '' : 'none';
     updateRefBgIcon(_refBgVisible);
   });
 
@@ -355,6 +360,7 @@ function setupRefWallBg() {
 
 export function updateRefWallBg(src) {
   const controls  = document.getElementById('refOverlayControls');
+  const handles   = document.getElementById('wallRefHandles');
   const bg        = document.getElementById('wallRefBg');
   const img       = document.getElementById('wallRefBgImg');
   if (!bg) return;
@@ -362,14 +368,17 @@ export function updateRefWallBg(src) {
     if (img) img.src = src;
     _refBgRot     = 0;
     _refBgVisible = true;
+    _refBgScale   = 1.0;
     setRefBgTransform();
     bg.style.display = '';
     bg.style.opacity = '0.3';
     if (controls) controls.style.display = '';
+    if (handles)  handles.style.display  = '';
     updateRefBgIcon(true);
   } else {
     bg.style.display = 'none';
     if (controls) controls.style.display = 'none';
+    if (handles)  handles.style.display  = 'none';
   }
 }
 
@@ -500,4 +509,53 @@ function setupWallPhotoPicker() {
 
   // Close on backdrop click
   modal?.addEventListener('click', e => { if (e.target === modal) modal.classList.add('hidden'); });
+}
+
+/* ──────────────────────────────────────────
+   REF OVERLAY CORNER HANDLES (resize by drag)
+   ────────────────────────────────────────── */
+function setupRefHandles() {
+  const handles = document.getElementById('wallRefHandles');
+  if (!handles) return;
+
+  let _dragging = false;
+  let _startScale = 1;
+  let _startDist  = 0;
+
+  handles.querySelectorAll('.wall-ref-handle').forEach(handle => {
+    handle.addEventListener('mousedown', e => {
+      e.stopPropagation();
+      e.preventDefault();
+      const wall = document.getElementById('wall');
+      if (!wall) return;
+      const r = wall.getBoundingClientRect();
+      const cx = r.left + r.width  / 2;
+      const cy = r.top  + r.height / 2;
+      _startDist  = Math.hypot(e.clientX - cx, e.clientY - cy) || 1;
+      _startScale = _refBgScale;
+      _dragging   = true;
+
+      const onMove = mv => {
+        if (!_dragging) return;
+        const d = Math.hypot(mv.clientX - cx, mv.clientY - cy) || 1;
+        const next = Math.min(4, Math.max(0.1, _startScale * (d / _startDist)));
+        _refBgScale = next;
+        setRefBgTransform();
+        // sync slider in modal if open
+        const slider = document.getElementById('refScaleSlider');
+        const label  = document.getElementById('refScaleVal');
+        if (slider) slider.value = Math.round(next * 100);
+        if (label)  label.textContent = Math.round(next * 100) + '%';
+      };
+
+      const onUp = () => {
+        _dragging = false;
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup',   onUp);
+      };
+
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup',   onUp);
+    });
+  });
 }

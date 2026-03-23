@@ -294,3 +294,34 @@
   padding: 2px 5px;
   line-height: 1.2;
 }
+
+/* ── Reference overlay resize handles ── */
+.wall-ref-handles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.wall-ref-handle {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border: 2px solid var(--color-orange, #e87040);
+  border-radius: 50%;
+  pointer-events: all;
+  cursor: nwse-resize;
+  transition: transform 0.15s, background 0.15s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+}
+
+.wall-ref-handle:hover {
+  background: var(--color-orange, #e87040);
+  transform: scale(1.3);
+}
+
+.wall-ref-handle--tl { top: -7px;    left: -7px;    cursor: nwse-resize; }
+.wall-ref-handle--tr { top: -7px;    right: -7px;   cursor: nesw-resize; }
+.wall-ref-handle--bl { bottom: -7px; left: -7px;    cursor: nesw-resize; }
+.wall-ref-handle--br { bottom: -7px; right: -7px;   cursor: nwse-resize; }
