@@ -627,3 +627,101 @@ select {
   transform: scale(1.15);
   box-shadow: 0 0 0 2px rgba(214,40,40,0.2);
 }
+
+/* ── Custom wall color picker ── */
+.wall-custom-color {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 4px;
+}
+
+.wall-custom-color input[type="color"] {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 2px solid rgba(0,48,73,0.15);
+  border-radius: 50%;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  overflow: hidden;
+}
+.wall-custom-color input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.wall-custom-color input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
+
+.wall-custom-color input[type="text"] {
+  width: 58px;
+  font-size: 11px;
+  padding: 3px 6px;
+  border: 1px solid rgba(0,48,73,0.2);
+  border-radius: 6px;
+  font-family: monospace;
+  color: var(--color-navy);
+  background: transparent;
+}
+.wall-custom-color input[type="text"]:focus {
+  outline: none;
+  border-color: var(--color-navy);
+}
+
+/* ── Frame style picker ── */
+.frame-style-picker {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.frame-style-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 5px 5px;
+  border: 1.5px solid rgba(0,48,73,0.15);
+  border-radius: 7px;
+  background: transparent;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+  font-size: 9px;
+  color: var(--color-text-caption);
+  font-family: var(--font-secondary);
+  min-width: 46px;
+}
+.frame-style-btn:hover   { background: rgba(0,48,73,0.04); }
+.frame-style-btn.active  {
+  border-color: var(--color-crimson);
+  background: rgba(214,40,40,0.05);
+  color: var(--color-crimson);
+}
+
+/* Small frame preview thumbnails */
+.frame-style-preview {
+  width: 36px;
+  height: 28px;
+  border-radius: 2px;
+  position: relative;
+}
+/* -- flat: simple solid border */
+.frame-style-preview--flat {
+  background: #ddd;
+  box-shadow: inset 0 0 0 5px #ccc;
+}
+/* -- bevel: gradient to simulate chamfer */
+.frame-style-preview--bevel {
+  background: linear-gradient(145deg, #e8e0d0 0%, #c8b890 45%, #8a7040 100%);
+}
+/* -- baroque: repeating diagonal gold hatching */
+.frame-style-preview--baroque {
+  background: repeating-linear-gradient(45deg,#f0d080 0px,#c9a84c 3px,#8a6020 5px,#c9a84c 8px,#f0d080 11px);
+  box-shadow: inset 0 0 0 3px #8a6020;
+}
+/* -- raised: stepped white moulding */
+.frame-style-preview--raised {
+  background: #f0eeec;
+  box-shadow: inset 2px 2px 0 #fff, inset -2px -2px 0 #ccc, inset 4px 4px 0 rgba(255,255,255,.5), inset -4px -4px 0 rgba(0,0,0,.08);
+}
+/* -- wood: oak grain stripes */
+.frame-style-preview--wood {
+  background: repeating-linear-gradient(91deg,#c8a46e 0px,#dab87c 1px,#c4954a 3px,#c8a46e 5px,#e0c090 7px,#b8883c 9px,#c8a46e 11px,#dab87c 13px);
+}

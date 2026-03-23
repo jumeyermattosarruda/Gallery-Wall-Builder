@@ -247,12 +247,13 @@ export function applyLayout(layout) {
   state.wItems.forEach(item => {
     if (item.fid) {
       savedSettings[item.fid] = {
-        color:    item.color,
-        border:   item.border,
-        rot:      item.rot,
-        imgPanX:  item.imgPanX,
-        imgPanY:  item.imgPanY,
-        imgZoom:  item.imgZoom,
+        color:      item.color,
+        border:     item.border,
+        rot:        item.rot,
+        imgPanX:    item.imgPanX,
+        imgPanY:    item.imgPanY,
+        imgZoom:    item.imgZoom,
+        frameStyle: item.frameStyle,
       };
     }
   });

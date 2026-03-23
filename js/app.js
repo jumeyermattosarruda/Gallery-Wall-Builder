@@ -27,6 +27,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSidebarCollapse();
   setupRpanelCollapse();
   setupRefWallBg();
+  setupWallColorPicker();
+  setupWallPhotoPicker();
 
   // Initial state
   updateDropHint();
@@ -282,19 +284,30 @@ export function ensureRpanelOpen() {
    ────────────────────────────────────────── */
 let _refBgRot     = 0;   // rotation in degrees (multiples of 90)
 let _refBgVisible = true;
+let _refBgScale   = 1.0; // user-controlled scale relative to "fill"
+
+export function getRefBgRot() { return _refBgRot; }
 
 function setRefBgTransform() {
   const img = document.getElementById('wallRefBgImg');
   if (!img) return;
-  // Translate-center + rotate.  When rotated 90/270 deg we also need to swap
-  // dimensions so the image still fills the wall — scale compensates.
   const rot = _refBgRot;
   const needsSwap = rot === 90 || rot === 270;
-  const bg = document.getElementById('wallRefBg');
-  const scaleX = needsSwap && bg ? bg.offsetHeight / Math.max(bg.offsetWidth, 1) : 1;
-  const scaleY = needsSwap && bg ? bg.offsetWidth  / Math.max(bg.offsetHeight, 1) : 1;
-  const scale  = Math.max(scaleX, scaleY);
-  img.style.transform = `translate(-50%,-50%) rotate(${rot}deg) scale(${scale})`;
+  const bg  = document.getElementById('wallRefBg');
+  // Base scale to ensure image covers wall (fill behaviour)
+  const bw = bg?.offsetWidth  || 1;
+  const bh = bg?.offsetHeight || 1;
+  const iw = img.naturalWidth  || bw;
+  const ih = img.naturalHeight || bh;
+  const [ew, eh] = needsSwap ? [ih, iw] : [iw, ih];
+  const fillScale = Math.max(bw / ew, bh / eh);
+  const totalScale = fillScale * _refBgScale;
+  img.style.transform = `translate(-50%,-50%) rotate(${rot}deg) scale(${totalScale})`;
+}
+
+export function applyRefBgScale(scale) {
+  _refBgScale = scale;
+  setRefBgTransform();
 }
 
 function updateRefBgIcon(visible) {
@@ -379,3 +392,112 @@ export function updateSidebarRefPhoto(src) {
 
 /* Legacy — kept for compatibility, no-op now */
 export function updateRefPhotoPane() {}
+
+/* ──────────────────────────────────────────
+   WALL CUSTOM COLOR PICKER
+   ────────────────────────────────────────── */
+function applyWallColorHex(hex) {
+  if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return;
+  const wallEl = document.getElementById('wall');
+  if (!wallEl) return;
+  // Remove active state from preset buttons
+  document.querySelectorAll('.wall-theme-btn').forEach(b => b.classList.remove('active'));
+  wallEl.style.background = hex;
+  // Sync controls
+  const picker = document.getElementById('wallColorInput');
+  const hexIn  = document.getElementById('wallColorHex');
+  if (picker) picker.value = hex;
+  if (hexIn)  hexIn.value  = hex;
+}
+window.applyWallColorHex = applyWallColorHex; // expose for canvas picker
+
+function setupWallColorPicker() {
+  const colorInput = document.getElementById('wallColorInput');
+  const hexInput   = document.getElementById('wallColorHex');
+  const eyeBtn     = document.getElementById('wallEyedropperBtn');
+
+  colorInput?.addEventListener('input', () => applyWallColorHex(colorInput.value));
+
+  hexInput?.addEventListener('change', () => {
+    let v = hexInput.value.trim();
+    if (!v.startsWith('#')) v = '#' + v;
+    applyWallColorHex(v);
+  });
+  hexInput?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') hexInput.dispatchEvent(new Event('change'));
+  });
+
+  eyeBtn?.addEventListener('click', async () => {
+    // Try native EyeDropper API (Chrome 95+) first
+    if ('EyeDropper' in window) {
+      try {
+        const result = await new window.EyeDropper().open();
+        applyWallColorHex(result.sRGBHex);
+        return;
+      } catch { /* cancelled */ return; }
+    }
+    // Fallback: photo upload modal
+    document.getElementById('wallColorModal')?.classList.remove('hidden');
+  });
+}
+
+/* ──────────────────────────────────────────
+   WALL PHOTO COLOR PICKER (canvas modal)
+   ────────────────────────────────────────── */
+function setupWallPhotoPicker() {
+  const modal      = document.getElementById('wallColorModal');
+  const dropzone   = document.getElementById('wallColorDropzone');
+  const fileInput  = document.getElementById('wallColorPhotoInput');
+  const canvas     = document.getElementById('wallColorCanvas');
+  const hint       = document.getElementById('wallColorPickHint');
+  const swatch     = document.getElementById('wallColorPreviewSwatch');
+  const hexDisplay = document.getElementById('wallColorPickedHex');
+  const applyBtn   = document.getElementById('applyWallPickedColorBtn');
+  if (!canvas) return;
+
+  let pickedHex = '#ffffff';
+
+  function loadPhotoToCanvas(file) {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const maxW = 400;
+      const scale = Math.min(1, maxW / img.width);
+      canvas.width  = Math.round(img.width  * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.style.display = '';
+      if (hint) hint.style.display = '';
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  }
+
+  if (dropzone) {
+    import('./upload.js').then(m => m.setupUploadZone(dropzone, files => {
+      if (files[0]) loadPhotoToCanvas(files[0]);
+    }));
+  }
+  fileInput?.addEventListener('change', e => {
+    if (e.target.files?.[0]) loadPhotoToCanvas(e.target.files[0]);
+    e.target.value = '';
+  });
+
+  canvas?.addEventListener('click', e => {
+    const rect = canvas.getBoundingClientRect();
+    const sx = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const sy = (e.clientY - rect.top)  * (canvas.height / rect.height);
+    const [r, g, b] = canvas.getContext('2d').getImageData(Math.round(sx), Math.round(sy), 1, 1).data;
+    pickedHex = `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+    if (swatch)     swatch.style.background = pickedHex;
+    if (hexDisplay) hexDisplay.textContent   = pickedHex;
+  });
+
+  applyBtn?.addEventListener('click', () => {
+    applyWallColorHex(pickedHex);
+    modal?.classList.add('hidden');
+  });
+
+  // Close on backdrop click
+  modal?.addEventListener('click', e => { if (e.target === modal) modal.classList.add('hidden'); });
+}
