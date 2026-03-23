@@ -84,6 +84,10 @@
 
     <!-- Topbar actions -->
     <div class="topbar__actions">
+      <button class="btn btn--ghost btn--sm" id="takeTourBtn" title="Restart the guided tour" aria-label="Take a tour">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        Take tour
+      </button>
       <button class="btn btn--ghost btn--sm" id="clearWallBtn" title="Clear all frames from wall">
         Clear wall
       </button>
@@ -258,6 +262,10 @@
                 <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" opacity=".35"/></svg>
               </label>
               <input id="refBgOpacity" type="range" min="5" max="80" value="30" class="ref-overlay-controls__slider" aria-label="Reference photo overlay opacity">
+              <button id="openRefModalBtn" class="btn btn--ghost btn--sm" title="Open overlay settings">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Edit
+              </button>
             </div>
           </div>
           <button id="showRpanelBtn" class="btn btn--ghost btn--sm" style="display:none" title="Show properties panel">
@@ -280,6 +288,13 @@
             <!-- Reference photo background overlay -->
             <div id="wallRefBg" class="wall-ref-bg" style="display:none" aria-hidden="true">
               <img id="wallRefBgImg" alt="">
+            </div>
+            <!-- Ref overlay resize handles (shown when overlay is visible) -->
+            <div id="wallRefHandles" class="wall-ref-handles" style="display:none" aria-hidden="true">
+              <div class="wall-ref-handle wall-ref-handle--tl" data-corner="tl" title="Drag to resize overlay"></div>
+              <div class="wall-ref-handle wall-ref-handle--tr" data-corner="tr" title="Drag to resize overlay"></div>
+              <div class="wall-ref-handle wall-ref-handle--bl" data-corner="bl" title="Drag to resize overlay"></div>
+              <div class="wall-ref-handle wall-ref-handle--br" data-corner="br" title="Drag to resize overlay"></div>
             </div>
             <!-- Drop hint -->
             <div class="drop-hint" id="dropHint" aria-hidden="true">
@@ -476,6 +491,38 @@
       <code id="wallColorPickedHex" style="font-size:13px;opacity:0.8">#ffffff</code>
       <button id="applyWallPickedColorBtn" class="btn btn--primary btn--sm" style="margin-left:auto">Apply to wall</button>
     </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     WELCOME MODAL
+     ══════════════════════════════════════════ -->
+<div id="welcomeModal" class="welcome-overlay" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+  <div class="welcome-card">
+    <!-- Grid background decoration -->
+    <div class="welcome-card__grid" aria-hidden="true"></div>
+
+    <!-- Close -->
+    <button id="welcomeCloseBtn" class="welcome-card__close btn btn--icon btn--sm" aria-label="Close welcome">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+
+    <!-- Logo + brand -->
+    <div class="welcome-card__brand">
+      <img src="assets/images/logo.png" alt="FrameRoom logo" class="welcome-card__logo">
+      <span class="welcome-card__brand-name brand-title">FrameRoom</span>
+    </div>
+
+    <p class="welcome-card__tagline">Arrange. Visualize. Hang.</p>
+
+    <p class="welcome-card__body">
+      Plan your gallery wall before the first nail. Play with layouts, move things around, and see what works — all on a clean, virtual wall.
+    </p>
+
+    <button id="welcomeTourBtn" class="btn btn--primary welcome-card__cta">
+      Take a tour
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </button>
   </div>
 </div>
 

@@ -1,8 +1,8 @@
-# Gallery Wall Builder: from image to IRL
+# FrameRoom
 
 > **Arrange. Visualize. Hang.**
 
-A browser-based tool for planning gallery walls — upload photos of your art, remove backgrounds, visualize layouts on a virtual white wall, and drag-drop to find your perfect arrangement.
+A browser-based gallery wall planner — upload photos of your art, remove backgrounds, visualize layouts on a virtual wall, and drag-drop until it's perfect. No account, no install, no server.
 
 ---
 
@@ -12,12 +12,14 @@ A browser-based tool for planning gallery walls — upload photos of your art, r
 |---------|---------|
 | 🖼 **Multi-format upload** | JPG, PNG, WebP, GIF, BMP, **HEIC** (iPhone photos) |
 | ✂️ **Auto background removal** | Built-in canvas algorithm; AI-powered option available |
-| 📐 **Reference photo sizing** | Upload a group photo, draw boxes to tag each frame, get proportional sizes |
+| 🎨 **5 frame styles** | Minimal, Modern, Baroque, White Modern, Wood — CSS-rendered, no assets |
+| 🖌 **Custom frame & wall colors** | Color picker + hex field + EyeDropper API; pick from a real wall photo |
+| 📐 **Reference photo overlay** | Upload your real wall; fit/fill/scale overlay with corner handles |
 | 🗂 **12 layout templates** | Salon, Pyramid, Grids, Triptych, Asymmetric, Staircase, and more |
 | 🖱 **Drag & drop canvas** | Move, resize (Shift = lock aspect ratio), rotate each frame |
-| 🎨 **Frame customization** | 10 border colors, adjustable border width, rotation slider |
-| 🏠 **5 wall colors** | White, Off-white, Linen, Sage, Dark |
-| ⌨️ **Keyboard support** | Arrow keys to nudge, Delete to remove, Escape to deselect |
+| 🔄 **Drag frame back to shelf** | Drag a placed frame over the shelf to return it |
+| ⌨️ **Keyboard support** | Arrow keys to nudge, Del to remove, ⌘Z/⌘⇧Z undo/redo |
+| 🏠 **Wall color presets** | White, Off-white, Linen, Sage, Dark + custom color wheel |
 | 📤 **PNG export** | Downloads a 2× retina-quality render |
 | 🚀 **GitHub Pages ready** | Static HTML/CSS/JS — no server, no build step |
 
@@ -36,7 +38,7 @@ A browser-based tool for planning gallery walls — upload photos of your art, r
 
 ```bash
 # Clone the repo
-git clone https://github.com/yourusername/Gallery-Wall-Builder.git
+git clone https://github.com/jumeyermattosarruda/Gallery-Wall-Builder.git
 cd Gallery-Wall-Builder
 
 # No build step — serve with any static server:
@@ -74,7 +76,8 @@ Gallery-Wall-Builder/
 │   ├── layouts.js          # 12 layout templates
 │   ├── wall.js             # Drag/drop canvas, keyboard
 │   ├── properties.js       # Right panel controls
-│   ├── refPhoto.js         # Reference photo tagging
+│   ├── refPhoto.js         # Reference photo overlay controls
+│   ├── tour.js             # Onboarding welcome modal + guided tour
 │   └── export.js           # PNG export
 │
 ├── assets/
@@ -94,16 +97,15 @@ Gallery-Wall-Builder/
 - HEIC (iPhone) photos are supported automatically
 - Background removal runs in the background after each upload
 
-### Step 2 — Reference photo (optional, recommended)
-- Upload a photo of all frames laid out together on the floor
-- Draw bounding boxes around each frame in the modal
-- Assign each box to a frame — the app calculates relative sizes
+### Step 2 — Reference photo (optional)
+- Upload a photo of your real wall or frames laid together
+- Fit/scale the overlay to the wall using the quick-fit buttons or corner drag handles
+- Adjust opacity to see both the overlay and your layout simultaneously
 
 ### Step 3 — Arrange
 - Click a layout template to populate the wall
-- Drag frames to reposition
-- Drag the red corner handle to resize (hold Shift = lock aspect ratio)
-- Use the properties panel to adjust border color, thickness, rotation
+- Drag frames to reposition; drag back over the shelf to un-place
+- Use the properties panel: frame style, custom color, mat thickness, rotation, image pan/zoom
 - Export as PNG when done
 
 ---
