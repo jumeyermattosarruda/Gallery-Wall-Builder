@@ -23,7 +23,6 @@
     left: 0;
     right: 0;
     height: var(--mob-nav-height);
-    /* Safe area for iPhone home indicator */
     padding-bottom: env(safe-area-inset-bottom, 0px);
     background: var(--color-white);
     border-top: 1px solid rgba(0, 48, 73, 0.1);
@@ -47,7 +46,6 @@
     font-weight: 500;
     cursor: pointer;
     transition: color 0.15s, background 0.15s;
-    /* 44px minimum tap target */
     min-width: 44px;
     padding: 6px 4px;
     border-radius: 0;
@@ -60,10 +58,6 @@
 
   .mob-nav__btn.active {
     color: var(--color-crimson);
-  }
-
-  .mob-nav__btn svg {
-    flex-shrink: 0;
   }
 }
 
@@ -94,11 +88,10 @@
 
 /* ══════════════════════════════════════════
    SHARED BOTTOM SHEET BEHAVIOUR
-   Applied to sidebar + rpanel + mobColorSheet on mobile
+   sidebar + rpanel are moved to body via JS (iOS fix)
    ══════════════════════════════════════════ */
 @media (max-width: 768px) {
 
-  /* Pull both sidebars out of the flex flow into fixed sheets */
   .sidebar,
   .rpanel {
     position: fixed !important;
@@ -108,26 +101,39 @@
     width: 100% !important;
     min-width: 0 !important;
     max-width: 100%;
-    height: 72vh;
-    max-height: calc(100vh - var(--mob-nav-height) - 48px);
+    /* Use 85vh to give content room to breathe */
+    height: 85vh;
+    max-height: calc(100vh - var(--mob-nav-height) - 44px);
     border-radius: 20px 20px 0 0;
     border: none !important;
     box-shadow: 0 -4px 32px rgba(0, 48, 73, 0.18);
     z-index: 800;
     overflow-y: auto;
+    overflow-x: hidden;
     overscroll-behavior: contain;
-    transform: translateY(110%);
-    transition: transform 0.35s cubic-bezier(0.34, 1, 0.64, 1);
-    /* Safe area at bottom of sheet content */
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px) !important;
+    -webkit-overflow-scrolling: touch;
+    background: var(--color-white);
+    /* Hidden: fully off-screen + invisible to prevent any interaction leakage */
+    transform: translateY(100%);
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform 0.35s cubic-bezier(0.34, 1, 0.64, 1),
+                visibility 0s linear 0.35s;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px) !important;
+    will-change: transform;
   }
 
   .sidebar.mob-open,
   .rpanel.mob-open {
     transform: translateY(0);
+    visibility: visible;
+    pointer-events: all;
+    /* Cancel the visibility delay when opening */
+    transition: transform 0.35s cubic-bezier(0.34, 1, 0.64, 1),
+                visibility 0s linear 0s;
   }
 
-  /* Drag handle at top of sheet */
+  /* Drag handle */
   .sidebar::before,
   .rpanel::before {
     content: '';
@@ -138,9 +144,11 @@
     border-radius: 2px;
     margin: 12px auto 4px;
     flex-shrink: 0;
+    position: sticky;
+    top: 0;
   }
 
-  /* Keep desktop collapse controls hidden on mobile */
+  /* Desktop collapse controls hidden on mobile */
   .sidebar__collapse-btn,
   .sidebar-expand-btn,
   #rpanelCloseBtn,
@@ -148,15 +156,35 @@
     display: none !important;
   }
 
-  /* Sidebar collapsed state: ignored on mobile (always use mob-open) */
+  /* Override any collapsed state on mobile */
   .sidebar.collapsed {
     width: 100% !important;
     min-width: 0 !important;
+    transform: translateY(100%);
+    visibility: hidden;
+  }
+
+  .sidebar.collapsed.mob-open {
+    transform: translateY(0);
+    visibility: visible;
   }
 
   .rpanel.collapsed {
     width: 100% !important;
     padding: var(--sp-sm) !important;
+    transform: translateY(100%);
+    visibility: hidden;
+  }
+
+  .rpanel.collapsed.mob-open {
+    transform: translateY(0);
+    visibility: visible;
+  }
+
+  /* Ensure sidebar tab panels scroll properly */
+  .sidebar__tab-panel.active {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
@@ -180,12 +208,20 @@
     z-index: 800;
     padding: 4px 20px 20px;
     padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
-    transform: translateY(110%);
-    transition: transform 0.35s cubic-bezier(0.34, 1, 0.64, 1);
+    transform: translateY(100%);
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform 0.35s cubic-bezier(0.34, 1, 0.64, 1),
+                visibility 0s linear 0.35s;
+    will-change: transform;
   }
 
   .mob-color-sheet.mob-open {
     transform: translateY(0);
+    visibility: visible;
+    pointer-events: all;
+    transition: transform 0.35s cubic-bezier(0.34, 1, 0.64, 1),
+                visibility 0s linear 0s;
   }
 
   .mob-sheet__handle {
@@ -198,50 +234,248 @@
 
   .mob-sheet__title {
     font-family: var(--font-primary);
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
     color: var(--color-navy);
-    margin-bottom: 14px;
+    margin-bottom: 16px;
   }
 
   .mob-color-sheet__swatches {
     display: flex !important;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
-    margin-bottom: 14px;
+    margin-bottom: 20px;
   }
 
   .mob-color-sheet__swatches .wall-theme-btn {
-    width: 40px !important;
-    height: 40px !important;
+    width: 44px !important;
+    height: 44px !important;
     border-radius: 50% !important;
     border: 2px solid rgba(0, 48, 73, 0.15) !important;
   }
 
+  /* Color wheel row */
   .mob-color-sheet__custom {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+  }
+
+  /* Native color picker = color wheel on iOS */
+  .mob-color-sheet__wheel-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-primary);
+    font-size: 13px;
+    color: var(--color-navy);
+    opacity: 0.7;
   }
 
   .mob-color-sheet__custom input[type="color"] {
-    width: 40px;
-    height: 40px;
-    border: none;
+    width: 48px;
+    height: 48px;
+    border: 2px solid rgba(0, 48, 73, 0.15);
     padding: 2px;
     border-radius: 50%;
     cursor: pointer;
     flex-shrink: 0;
+    -webkit-appearance: none;
+    appearance: none;
+    background: none;
   }
 
   .mob-color-sheet__custom input[type="text"] {
     flex: 1;
-    height: 40px;
+    height: 44px;
     font-size: 14px;
     padding: 0 12px;
     border: 1.5px solid rgba(0, 48, 73, 0.18);
     border-radius: 10px;
     font-family: monospace;
+    color: var(--color-navy);
+  }
+}
+
+/* ══════════════════════════════════════════
+   MOBILE GUIDE BUTTON (topbar)
+   ══════════════════════════════════════════ */
+.mob-guide-btn {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mob-guide-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-primary);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-navy);
+    opacity: 0.7;
+    background: rgba(0, 48, 73, 0.07);
+    border: none;
+    border-radius: var(--radius-pill);
+    padding: 7px 12px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 36px;
+    white-space: nowrap;
+  }
+
+  .mob-guide-btn:active {
+    opacity: 1;
+    background: rgba(0, 48, 73, 0.12);
+  }
+}
+
+/* ══════════════════════════════════════════
+   STEP GUIDE CAROUSEL (mobile)
+   ══════════════════════════════════════════ */
+.mob-guide {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mob-guide {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 48, 73, 0.5);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    z-index: 1050;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  .mob-guide.visible {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .mob-guide__inner {
+    background: var(--color-white);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 360px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0, 48, 73, 0.25);
+  }
+
+  .mob-guide__close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: rgba(0, 48, 73, 0.07);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 2;
+    color: var(--color-navy);
+    opacity: 0.6;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mob-guide__close:active { opacity: 1; }
+
+  /* Horizontal scroll-snap track */
+  .mob-guide__track {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .mob-guide__track::-webkit-scrollbar { display: none; }
+
+  .mob-guide__card {
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+    padding: 40px 28px 24px;
+    text-align: center;
+    box-sizing: border-box;
+  }
+
+  .mob-guide__card-step {
+    font-family: var(--font-primary);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-orange);
+    margin-bottom: 14px;
+  }
+
+  .mob-guide__icon {
+    font-size: 40px;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .mob-guide__title {
+    font-family: var(--font-primary);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--color-navy);
+    margin-bottom: 10px;
+    line-height: 1.25;
+  }
+
+  .mob-guide__body {
+    font-family: var(--font-primary);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--color-navy);
+    opacity: 0.65;
+    margin-bottom: 24px;
+  }
+
+  .mob-guide__cta {
+    width: 100%;
+    justify-content: center;
+    gap: 8px;
+    font-size: 14px;
+    padding: 12px 20px;
+    min-height: 48px;
+  }
+
+  /* Dots */
+  .mob-guide__dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px 0 20px;
+  }
+
+  .mob-guide__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(0, 48, 73, 0.2);
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.2s, transform 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mob-guide__dot.active {
+    background: var(--color-navy);
+    transform: scale(1.25);
   }
 }
 
@@ -252,46 +486,31 @@
   .topbar {
     padding: 0 12px;
     gap: 8px;
-    /* Safe area for notch */
     padding-top: env(safe-area-inset-top, 0px);
     height: calc(var(--topbar-height) + env(safe-area-inset-top, 0px));
   }
 
-  /* Hide items that clutter small screens */
-  .topbar__tagline,
-  #takeTourBtn,
-  #clearWallBtn,
-  #guidesBtn,
-  .wall-toolbar__divider,
-  .wall-toolbar > label,
-  #snapCb,
-  #wallSz,
-  #gridSz {
+  /* Hide step pills entirely — replaced by Guide carousel on mobile */
+  .topbar__steps {
     display: none !important;
   }
 
-  /* Slim step pills to numbers only */
-  .step-pill {
-    padding: 5px 10px;
-    font-size: 0; /* hide text */
+  /* Hide clutter */
+  .topbar__tagline,
+  #takeTourBtn,
+  #clearWallBtn {
+    display: none !important;
   }
 
-  .step-pill .step-num {
-    font-size: 11px;
-  }
-
-  .step-divider {
-    width: 10px;
-  }
-
-  /* Keep export + topbar actions */
+  /* Keep export only */
   .topbar__actions {
     margin-left: auto;
   }
 
-  .topbar__actions .btn {
-    font-size: 11px;
-    padding: 6px 10px;
+  #exportBtn {
+    font-size: 12px;
+    padding: 7px 12px;
+    min-height: 36px;
   }
 }
 
@@ -303,38 +522,42 @@
     overflow: visible;
   }
 
-  /* Sidebar + rpanel are now fixed sheets, not flow children */
-  /* The center takes full width automatically */
   .center {
     width: 100%;
-    /* Reserve space above bottom nav */
-    height: calc(100vh - var(--topbar-height) - var(--mob-nav-height) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    height: calc(100vh
+      - var(--topbar-height)
+      - var(--mob-nav-height)
+      - env(safe-area-inset-top, 0px)
+      - env(safe-area-inset-bottom, 0px));
     overflow: hidden;
   }
 
-  /* Slim down the wall toolbar to just the critical ref overlay controls */
+  /* Slim wall toolbar — keep only ref overlay controls */
   .wall-toolbar {
     padding: 6px 10px;
     gap: 6px;
     min-height: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
   }
 
-  /* Hide wall settings that are desktop-only */
+  /* Hide all wall toolbar groups except ref overlay */
   .wall-toolbar__group:has(#wallSz),
   .wall-toolbar__group:has(#gridSz),
-  .wall-toolbar > .wall-toolbar__divider,
   .wall-toolbar__group:has(.wall-theme-list),
-  .sel-badge,
-  #showRpanelBtn {
+  .wall-toolbar__divider,
+  #guidesBtn,
+  #showRpanelBtn,
+  .sel-badge {
     display: none !important;
   }
 
-  /* Let the keyboard shortcut hint hide on mobile */
-  .wall-toolbar > span:last-child {
+  /* Remove keyboard shortcuts hint on mobile */
+  .wall-toolbar > div[style*="margin-left:auto"],
+  .wall-toolbar > div:last-child {
     display: none !important;
   }
 
-  /* Wall viewport: takes remaining center height */
   .wall-viewport {
     padding: 8px;
     overflow: hidden;
@@ -342,59 +565,42 @@
     justify-content: flex-start;
   }
 
-  /* Wall wrapper: scaled to fit (transform applied by JS) */
   .wall-wrapper {
     transform-origin: top left;
   }
 }
 
 /* ══════════════════════════════════════════
-   TOUCH TARGET ENFORCEMENT (all mobile)
+   TOUCH TARGET ENFORCEMENT
    ══════════════════════════════════════════ */
 @media (max-width: 768px) {
-  /* Ensure all buttons meet 44px minimum */
-  .btn,
-  button,
-  [role="button"] {
+  .btn, button, [role="button"] {
     min-height: 44px;
     min-width: 44px;
   }
 
-  /* Except very intentionally small decorative ones */
+  /* Exceptions for decorative/tiny elements */
   .wall-ref-handle,
-  .mob-sheet__handle {
+  .mob-sheet__handle,
+  .mob-guide__dot,
+  .mob-guide__close {
     min-height: 0;
     min-width: 0;
   }
 
-  /* Bigger frame resize handles for touch */
+  /* Bigger frame resize handles */
   .wframe__rh {
-    width: 18px !important;
-    height: 18px !important;
+    width: 20px !important;
+    height: 20px !important;
   }
 
-  /* Bigger corner ref overlay handles */
-  .wall-ref-handle {
-    width: 20px;
-    height: 20px;
-  }
-
-  /* Right panel spacing on mobile */
-  .rpanel {
-    padding: 4px 16px 16px !important;
-  }
-
-  .rpanel__group {
-    gap: 8px;
-  }
-
-  /* Input range sliders: taller hit area */
+  /* Taller range sliders */
   input[type="range"] {
-    height: 24px;
+    height: 28px;
     accent-color: var(--color-navy);
   }
 
-  /* Frame shelf: horizontal scroll strip on mobile */
+  /* Frame shelf: horizontal strip */
   .frame-shelf {
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -402,14 +608,15 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Modals: full-width on mobile */
+  /* Modals: bottom sheet on mobile */
   .step-modal {
-    padding: 20px 16px;
-    border-radius: 16px 16px 0 0;
-    max-height: 85vh;
+    padding: 20px 16px 32px;
+    border-radius: 20px 20px 0 0;
+    max-height: 88vh;
     margin: auto 0 0;
     width: 100%;
     max-width: 100%;
+    overflow-y: auto;
   }
 
   .step-overlay {
@@ -432,10 +639,24 @@
 }
 
 /* ══════════════════════════════════════════
-   TOUR — mobile tooltip adjustments
+   TOUR — spotlight-based (all sizes)
    ══════════════════════════════════════════ */
+
+/* The spotlight div is injected by tour.js at body level */
+.tour-spotlight {
+  position: fixed;
+  z-index: 1101;
+  pointer-events: none;
+  border-radius: 10px;
+}
+
+/* Tooltip always above spotlight */
+.tour-tooltip {
+  z-index: 1102;
+}
+
 @media (max-width: 768px) {
-  /* Tour tooltips snap to bottom of screen on mobile */
+  /* Pin tour tooltip above bottom nav on mobile */
   .tour-tooltip {
     position: fixed !important;
     bottom: calc(var(--mob-nav-height) + env(safe-area-inset-bottom, 0px) + 12px) !important;
@@ -452,13 +673,8 @@
     transform: translateY(0) !important;
   }
 
-  .tour-tooltip__title {
-    font-size: 14px;
-  }
-
-  .tour-tooltip__body {
-    font-size: 13px;
-  }
+  .tour-tooltip__title { font-size: 14px; }
+  .tour-tooltip__body  { font-size: 13px; }
 
   .tour-tooltip__next,
   .tour-tooltip__close {
@@ -474,19 +690,15 @@
 @media (max-width: 768px) {
   #app {
     overscroll-behavior: none;
-    /* Prevent text selection during drag */
     -webkit-user-select: none;
     user-select: none;
   }
 
-  /* Re-enable selection in inputs */
-  input,
-  textarea {
+  input, textarea {
     -webkit-user-select: text;
     user-select: text;
   }
 
-  /* Wall: prevent browser handling touch (panning/zooming the page) */
   #wall {
     touch-action: none;
   }
