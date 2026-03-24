@@ -60,6 +60,11 @@
     </a>
 
     <span class="topbar__tagline">Arrange. Visualize. Hang.</span>
+    <!-- Mobile-only guide button -->
+    <button id="mobGuideBtn" class="mob-guide-btn" aria-label="Open step guide" title="Steps guide">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+      Guide
+    </button>
 
     <!-- Progress bar (shown while processing images) -->
     <div id="processingBar" style="display:none;flex:1;max-width:160px;margin:0 16px">
@@ -528,6 +533,48 @@
 </div>
 
 <!-- ══════════════════════════════════════════
+     MOBILE: Step guide carousel
+     ══════════════════════════════════════════ -->
+<div id="mobGuide" class="mob-guide" aria-hidden="true">
+  <div class="mob-guide__inner" role="dialog" aria-label="Getting started">
+    <button class="mob-guide__close" id="mobGuideClose" aria-label="Close guide">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+
+    <div class="mob-guide__track" id="mobGuideTrack">
+      <!-- Card 1: Upload -->
+      <div class="mob-guide__card">
+        <div class="mob-guide__card-step">Step 1 of 2</div>
+        <div class="mob-guide__icon">🖼</div>
+        <h3 class="mob-guide__title">Upload your art</h3>
+        <p class="mob-guide__body">Add photos of your frames, posters, or paintings. We'll remove the background automatically.</p>
+        <button class="btn btn--primary mob-guide__cta" data-guide-action="upload">
+          Open upload
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+      <!-- Card 2: Reference photo -->
+      <div class="mob-guide__card">
+        <div class="mob-guide__card-step">Step 2 of 2</div>
+        <div class="mob-guide__icon">📐</div>
+        <h3 class="mob-guide__title">Add a reference photo</h3>
+        <p class="mob-guide__body">Upload a photo of your real wall and fit it to the canvas to get proportions right. This step is optional.</p>
+        <button class="btn btn--primary mob-guide__cta" data-guide-action="reference">
+          Upload reference
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Dot nav -->
+    <div class="mob-guide__dots" id="mobGuideDots">
+      <button class="mob-guide__dot active" data-slide="0" aria-label="Step 1"></button>
+      <button class="mob-guide__dot" data-slide="1" aria-label="Step 2"></button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
      TOAST CONTAINER
      ══════════════════════════════════════════ -->
 <div id="toastContainer" class="toast-container" aria-live="assertive" aria-atomic="true"></div>
@@ -546,14 +593,26 @@
       p.setAttribute('aria-current', i + 1 === n ? 'step' : 'false');
     });
 
+    const isMobile = window.innerWidth <= 768;
+
+    if (n === 1) {
+      if (isMobile) {
+        document.querySelector('.mob-nav__btn[data-sheet="upload"]')?.click();
+      }
+    }
+
     // Step 2: open ref photo modal
     if (n === 2) {
       document.getElementById('refPhotoModal')?.classList.remove('hidden');
     }
+
     // Step 3: switch to Layouts tab
     if (n === 3) {
       const layoutTab = document.querySelector('.sidebar__tab[data-target="tabLayouts"]');
       if (layoutTab) layoutTab.click();
+      if (isMobile) {
+        document.querySelector('.mob-nav__btn[data-sheet="layouts"]')?.click();
+      }
     }
   }
 </script>
@@ -576,8 +635,12 @@
     <button class="wall-theme-btn" data-theme="sage"      style="background:#d4ddd0" title="Sage" aria-label="Sage wall"></button>
     <button class="wall-theme-btn" data-theme="dark"      style="background:#1a1a1a" title="Dark" aria-label="Dark wall"></button>
   </div>
+  <label class="mob-color-sheet__wheel-label">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="7" r="1.5" fill="currentColor"/><circle cx="17" cy="12" r="1.5" fill="currentColor"/><circle cx="7" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="17" r="1.5" fill="currentColor"/></svg>
+    Color wheel
+  </label>
   <div class="mob-color-sheet__custom">
-    <input type="color" id="mobWallColorInput" value="#ffffff" aria-label="Custom wall color">
+    <input type="color" id="mobWallColorInput" value="#ffffff" aria-label="Custom wall color — tap to open color wheel">
     <input type="text"  id="mobWallColorHex"   placeholder="#hex" maxlength="7" aria-label="Hex color code" autocomplete="off">
   </div>
 </div>

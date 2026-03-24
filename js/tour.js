@@ -88,20 +88,48 @@ function _renderStep(idx) {
 }
 
 /* ──────────────────────────────────────────
-   HIGHLIGHT
+   HIGHLIGHT — body-level spotlight div
+   Works through overflow:hidden and transforms.
    ────────────────────────────────────────── */
+let _spotlight = null;
+let _highlightedEl = null;
+
 function _highlightTarget(el) {
   _clearHighlight();
   if (!el) return;
-  el.classList.add('tour-highlight');
+  _highlightedEl = el;
+
+  const rect = el.getBoundingClientRect();
+  const PAD  = 6;
+
+  _spotlight = document.createElement('div');
+  _spotlight.className = 'tour-spotlight';
+  _spotlight.style.cssText = [
+    'position:fixed',
+    `top:${rect.top - PAD}px`,
+    `left:${rect.left - PAD}px`,
+    `width:${rect.width + PAD * 2}px`,
+    `height:${rect.height + PAD * 2}px`,
+    'z-index:1101',
+    'box-shadow:0 0 0 9999px rgba(0,48,73,0.55)',
+    'border-radius:10px',
+    'outline:2.5px solid rgba(247,127,0,0.9)',
+    'outline-offset:2px',
+    'pointer-events:none',
+    'transition:top 0.3s ease,left 0.3s ease,width 0.3s ease,height 0.3s ease',
+  ].join(';');
+  document.body.appendChild(_spotlight);
+
+  // Clicking the target element advances the tour
   el.addEventListener('click', _onHighlightClick, { once: true });
 }
 
 function _clearHighlight() {
-  document.querySelectorAll('.tour-highlight').forEach(el => {
-    el.classList.remove('tour-highlight');
-    el.removeEventListener('click', _onHighlightClick);
-  });
+  if (_spotlight) { _spotlight.remove(); _spotlight = null; }
+  if (_highlightedEl) {
+    _highlightedEl.removeEventListener('click', _onHighlightClick);
+    _highlightedEl = null;
+  }
 }
 
 function _onHighlightClick() {
@@ -203,8 +231,9 @@ function _hideTooltip() {
    OVERLAY
    ────────────────────────────────────────── */
 function _showOverlay() {
+  // Overlay is now just a pointer-events blocker; dimming done by spotlight
   const ov = document.getElementById('tourOverlay');
-  if (ov) ov.classList.add('visible');
+  if (ov) { ov.classList.add('visible'); ov.style.background = 'transparent'; }
 }
 
 function _hideOverlay() {

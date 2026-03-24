@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupWallPhotoPicker();
   setupRefHandles();
   initTour();
+  initMobGuide();
   scaleWall();
   setupMobileNav();
 
@@ -618,8 +619,18 @@ function closeAllMobSheets() {
   document.getElementById('mobSheetBackdrop')?.classList.remove('visible');
   document.querySelectorAll('.mob-nav__btn').forEach(b => b.classList.remove('active'));
 }
+window._closeAllMobSheets = closeAllMobSheets; // expose for inline handlers
 
 function setupMobileNav() {
+  // iOS fix: position:fixed inside overflow:hidden containers can be unreliable.
+  // Moving sheets to body level ensures they render at the correct viewport layer.
+  if (window.innerWidth <= 768) {
+    const sidebar = document.getElementById('sidebar');
+    const rpanel  = document.getElementById('rpanel');
+    if (sidebar && sidebar.parentElement !== document.body) document.body.appendChild(sidebar);
+    if (rpanel  && rpanel.parentElement  !== document.body) document.body.appendChild(rpanel);
+  }
+
   const backdrop = document.getElementById('mobSheetBackdrop');
   backdrop?.addEventListener('click', closeAllMobSheets);
 
@@ -683,4 +694,68 @@ function setupMobileNav() {
     if (!v.startsWith('#')) v = '#' + v;
     window.applyWallColorHex?.(v);
   });
+}
+
+/* ──────────────────────────────────────────
+   MOBILE STEP GUIDE CAROUSEL
+   ────────────────────────────────────────── */
+export function initMobGuide() {
+  const guide     = document.getElementById('mobGuide');
+  const closeBtn  = document.getElementById('mobGuideClose');
+  const track     = document.getElementById('mobGuideTrack');
+  const dots      = document.querySelectorAll('.mob-guide__dot');
+  const guideBtn  = document.getElementById('mobGuideBtn');
+  if (!guide) return;
+
+  function openGuide() {
+    guide.classList.add('visible');
+    guide.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeGuide() {
+    guide.classList.remove('visible');
+    guide.setAttribute('aria-hidden', 'true');
+  }
+
+  closeBtn?.addEventListener('click', closeGuide);
+  guide.addEventListener('click', e => { if (e.target === guide) closeGuide(); });
+  guideBtn?.addEventListener('click', openGuide);
+
+  // Dot navigation
+  dots.forEach(dot => {
+    dot.addEventListener('click', () => {
+      const idx = parseInt(dot.dataset.slide);
+      if (track) track.scrollTo({ left: idx * track.offsetWidth, behavior: 'smooth' });
+    });
+  });
+
+  // Update dots on scroll
+  track?.addEventListener('scroll', () => {
+    const idx = Math.round(track.scrollLeft / (track.offsetWidth || 1));
+    dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+  }, { passive: true });
+
+  // CTA buttons
+  guide.querySelectorAll('[data-guide-action]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const action = btn.dataset.guideAction;
+      closeGuide();
+      if (action === 'upload') {
+        document.querySelector('.mob-nav__btn[data-sheet="upload"]')?.click();
+      } else if (action === 'reference') {
+        // Open ref photo upload
+        document.getElementById('refUploadZone')?.click();
+        // Also open the upload sheet so the zone is visible
+        document.querySelector('.mob-nav__btn[data-sheet="upload"]')?.click();
+      }
+    });
+  });
+
+  // Auto-show on first mobile load (after welcome modal closes)
+  const GUIDE_KEY = 'frameroom_guide_done';
+  if (window.innerWidth <= 768 && !localStorage.getItem(GUIDE_KEY)) {
+    // Delay until after welcome modal animation
+    setTimeout(openGuide, 600);
+    localStorage.setItem(GUIDE_KEY, '1');
+  }
 }
