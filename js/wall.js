@@ -106,8 +106,9 @@ export function initWall() {
     const fid = e.dataTransfer.getData('text/plain');
     if (fid && state.frames.find(f => f.id === fid)) {
       const wallRect = wallEl.getBoundingClientRect();
-      const x = e.clientX - wallRect.left;
-      const y = e.clientY - wallRect.top;
+      const s = state.wallScale || 1;
+      const x = (e.clientX - wallRect.left) / s;
+      const y = (e.clientY - wallRect.top)  / s;
       addToWall(fid, x, y);
     } else if (e.dataTransfer.files.length) {
       // Dropped image files directly onto wall
@@ -116,8 +117,8 @@ export function initWall() {
   });
 
   // Global mouse events for drag/resize
-  document.addEventListener('mousemove', onMouseMove);
-  document.addEventListener('mouseup',   e => onMouseUp(e));
+  document.addEventListener('pointermove', onMouseMove);
+  document.addEventListener('pointerup',   e => onMouseUp(e));
 
   // Keyboard
   document.addEventListener('keydown', onKeyDown);
@@ -358,7 +359,7 @@ function createFrameEl(item, frame) {
 function applyItemStyle(el, item) {
   el.style.cssText =
     `left:${item.x}px;top:${item.y}px;width:${item.w}px;height:${item.h}px;` +
-    `transform:rotate(${item.rot || 0}deg);position:absolute;`;
+    `transform:rotate(${item.rot || 0}deg);position:absolute;touch-action:none;`;
 
   const isSelected = state.selId === item.id;
   el.classList.toggle('selected', isSelected);
@@ -384,8 +385,8 @@ function applyItemStyle(el, item) {
 }
 
 function attachFrameEvents(el, item) {
-  // Frame-level mousedown — but NOT on the mat (handled separately below)
-  el.addEventListener('mousedown', e => {
+  // Frame-level pointerdown — but NOT on the mat (handled separately below)
+  el.addEventListener('pointerdown', e => {
     if (e.target.classList.contains('wframe__rh')) return;
     const mat = el.querySelector('.wframe__mat');
     if (mat && (e.target === mat || mat.contains(e.target))) return;
@@ -393,10 +394,10 @@ function attachFrameEvents(el, item) {
     startDrag(e, item.id);
   });
 
-  // Image drag: mousedown directly on mat / img element
+  // Image drag: pointerdown directly on mat / img element
   const mat = el.querySelector('.wframe__mat');
   if (mat) {
-    mat.addEventListener('mousedown', e => {
+    mat.addEventListener('pointerdown', e => {
       e.preventDefault();
       e.stopPropagation();
       if (state.selId === item.id) {
@@ -410,7 +411,7 @@ function attachFrameEvents(el, item) {
   }
 
   el.querySelectorAll('.wframe__rh').forEach(rh => {
-    rh.addEventListener('mousedown', e => {
+    rh.addEventListener('pointerdown', e => {
       e.preventDefault();
       e.stopPropagation();
       startResize(e, item.id, rh.dataset.corner);
@@ -561,8 +562,9 @@ function onMouseMove(e) {
     const mh = mat ? mat.offsetHeight : item.h;
     // Convert pixel delta to 0-100 range (50 = center).
     // Factor 60 makes a drag across ~80% of the frame traverse the full range.
-    const dx = (e.clientX - state.imgDrag.mx) / mw * 60;
-    const dy = (e.clientY - state.imgDrag.my) / mh * 60;
+    const _is = state.wallScale || 1;
+    const dx = (e.clientX - state.imgDrag.mx) / _is / mw * 60;
+    const dy = (e.clientY - state.imgDrag.my) / _is / mh * 60;
     item.imgPanX = Math.max(0, Math.min(100, state.imgDrag.ox + dx));
     item.imgPanY = Math.max(0, Math.min(100, state.imgDrag.oy + dy));
     refreshWFrame(state.imgDrag.id);
@@ -573,8 +575,9 @@ function onMouseMove(e) {
   if (state.drag) {
     const item = getWItem(state.drag.id);
     if (!item) return;
-    let nx = state.drag.ox + (e.clientX - state.drag.mx);
-    let ny = state.drag.oy + (e.clientY - state.drag.my);
+    const _s = state.wallScale || 1;
+    let nx = state.drag.ox + (e.clientX - state.drag.mx) / _s;
+    let ny = state.drag.oy + (e.clientY - state.drag.my) / _s;
     const s = snapValue();
     if (s) { nx = Math.round(nx / s) * s; ny = Math.round(ny / s) * s; }
     item.x = nx; item.y = ny;
@@ -594,8 +597,9 @@ function onMouseMove(e) {
     const item = getWItem(state.resize.id);
     if (!item) return;
     const { corner, ow, oh, ix, iy, aspect, ox, oy } = state.resize;
-    const dx = e.clientX - ox;
-    const dy = e.clientY - oy;
+    const _rs = state.wallScale || 1;
+    const dx = (e.clientX - ox) / _rs;
+    const dy = (e.clientY - oy) / _rs;
 
     let nw = ow, nh = oh, nx = ix, ny = iy;
 

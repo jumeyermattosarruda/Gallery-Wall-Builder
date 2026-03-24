@@ -63,6 +63,9 @@ export const state = {
 
   /* Image drag within frame (ephemeral) */
   imgDrag: null,
+
+  /* Wall CSS-transform scale factor (1 on desktop, <1 when wall is scaled to fit mobile viewport) */
+  wallScale: 1,
 };
 
 export function nextId(prefix = 'id') {
