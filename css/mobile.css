@@ -1,0 +1,493 @@
+/* ============================================================
+   MOBILE — Responsive overrides for ≤768px
+   All desktop layout preserved above this breakpoint.
+   ============================================================ */
+
+/* ── CSS custom property for bottom nav height ── */
+:root {
+  --mob-nav-height: 64px;
+}
+
+/* ══════════════════════════════════════════
+   BOTTOM NAVIGATION BAR
+   ══════════════════════════════════════════ */
+.mob-nav {
+  display: none; /* hidden on desktop */
+}
+
+@media (max-width: 768px) {
+  .mob-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--mob-nav-height);
+    /* Safe area for iPhone home indicator */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--color-white);
+    border-top: 1px solid rgba(0, 48, 73, 0.1);
+    box-shadow: 0 -2px 16px rgba(0, 48, 73, 0.08);
+    z-index: 700;
+    align-items: stretch;
+  }
+
+  .mob-nav__btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-caption);
+    font-family: var(--font-primary);
+    font-size: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+    /* 44px minimum tap target */
+    min-width: 44px;
+    padding: 6px 4px;
+    border-radius: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mob-nav__btn:active {
+    background: rgba(0, 48, 73, 0.05);
+  }
+
+  .mob-nav__btn.active {
+    color: var(--color-crimson);
+  }
+
+  .mob-nav__btn svg {
+    flex-shrink: 0;
+  }
+}
+
+/* ══════════════════════════════════════════
+   SHEET BACKDROP
+   ══════════════════════════════════════════ */
+.mob-sheet-backdrop {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mob-sheet-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 48, 73, 0.38);
+    z-index: 750;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  .mob-sheet-backdrop.visible {
+    opacity: 1;
+    pointer-events: all;
+  }
+}
+
+/* ══════════════════════════════════════════
+   SHARED BOTTOM SHEET BEHAVIOUR
+   Applied to sidebar + rpanel + mobColorSheet on mobile
+   ══════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* Pull both sidebars out of the flex flow into fixed sheets */
+  .sidebar,
+  .rpanel {
+    position: fixed !important;
+    bottom: var(--mob-nav-height);
+    left: 0;
+    right: 0;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100%;
+    height: 72vh;
+    max-height: calc(100vh - var(--mob-nav-height) - 48px);
+    border-radius: 20px 20px 0 0;
+    border: none !important;
+    box-shadow: 0 -4px 32px rgba(0, 48, 73, 0.18);
+    z-index: 800;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    transform: translateY(110%);
+    transition: transform 0.35s cubic-bezier(0.34, 1, 0.64, 1);
+    /* Safe area at bottom of sheet content */
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px) !important;
+  }
+
+  .sidebar.mob-open,
+  .rpanel.mob-open {
+    transform: translateY(0);
+  }
+
+  /* Drag handle at top of sheet */
+  .sidebar::before,
+  .rpanel::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: rgba(0, 48, 73, 0.18);
+    border-radius: 2px;
+    margin: 12px auto 4px;
+    flex-shrink: 0;
+  }
+
+  /* Keep desktop collapse controls hidden on mobile */
+  .sidebar__collapse-btn,
+  .sidebar-expand-btn,
+  #rpanelCloseBtn,
+  #showRpanelBtn {
+    display: none !important;
+  }
+
+  /* Sidebar collapsed state: ignored on mobile (always use mob-open) */
+  .sidebar.collapsed {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .rpanel.collapsed {
+    width: 100% !important;
+    padding: var(--sp-sm) !important;
+  }
+}
+
+/* ══════════════════════════════════════════
+   MOBILE COLOR SHEET
+   ══════════════════════════════════════════ */
+.mob-color-sheet {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mob-color-sheet {
+    display: block;
+    position: fixed;
+    bottom: var(--mob-nav-height);
+    left: 0;
+    right: 0;
+    background: var(--color-white);
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -4px 32px rgba(0, 48, 73, 0.18);
+    z-index: 800;
+    padding: 4px 20px 20px;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+    transform: translateY(110%);
+    transition: transform 0.35s cubic-bezier(0.34, 1, 0.64, 1);
+  }
+
+  .mob-color-sheet.mob-open {
+    transform: translateY(0);
+  }
+
+  .mob-sheet__handle {
+    width: 36px;
+    height: 4px;
+    background: rgba(0, 48, 73, 0.18);
+    border-radius: 2px;
+    margin: 12px auto 16px;
+  }
+
+  .mob-sheet__title {
+    font-family: var(--font-primary);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-navy);
+    margin-bottom: 14px;
+  }
+
+  .mob-color-sheet__swatches {
+    display: flex !important;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+
+  .mob-color-sheet__swatches .wall-theme-btn {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    border: 2px solid rgba(0, 48, 73, 0.15) !important;
+  }
+
+  .mob-color-sheet__custom {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .mob-color-sheet__custom input[type="color"] {
+    width: 40px;
+    height: 40px;
+    border: none;
+    padding: 2px;
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .mob-color-sheet__custom input[type="text"] {
+    flex: 1;
+    height: 40px;
+    font-size: 14px;
+    padding: 0 12px;
+    border: 1.5px solid rgba(0, 48, 73, 0.18);
+    border-radius: 10px;
+    font-family: monospace;
+  }
+}
+
+/* ══════════════════════════════════════════
+   TOPBAR — mobile simplification
+   ══════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .topbar {
+    padding: 0 12px;
+    gap: 8px;
+    /* Safe area for notch */
+    padding-top: env(safe-area-inset-top, 0px);
+    height: calc(var(--topbar-height) + env(safe-area-inset-top, 0px));
+  }
+
+  /* Hide items that clutter small screens */
+  .topbar__tagline,
+  #takeTourBtn,
+  #clearWallBtn,
+  #guidesBtn,
+  .wall-toolbar__divider,
+  .wall-toolbar > label,
+  #snapCb,
+  #wallSz,
+  #gridSz {
+    display: none !important;
+  }
+
+  /* Slim step pills to numbers only */
+  .step-pill {
+    padding: 5px 10px;
+    font-size: 0; /* hide text */
+  }
+
+  .step-pill .step-num {
+    font-size: 11px;
+  }
+
+  .step-divider {
+    width: 10px;
+  }
+
+  /* Keep export + topbar actions */
+  .topbar__actions {
+    margin-left: auto;
+  }
+
+  .topbar__actions .btn {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+}
+
+/* ══════════════════════════════════════════
+   WORKSPACE — mobile layout
+   ══════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .workspace {
+    overflow: visible;
+  }
+
+  /* Sidebar + rpanel are now fixed sheets, not flow children */
+  /* The center takes full width automatically */
+  .center {
+    width: 100%;
+    /* Reserve space above bottom nav */
+    height: calc(100vh - var(--topbar-height) - var(--mob-nav-height) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    overflow: hidden;
+  }
+
+  /* Slim down the wall toolbar to just the critical ref overlay controls */
+  .wall-toolbar {
+    padding: 6px 10px;
+    gap: 6px;
+    min-height: 0;
+  }
+
+  /* Hide wall settings that are desktop-only */
+  .wall-toolbar__group:has(#wallSz),
+  .wall-toolbar__group:has(#gridSz),
+  .wall-toolbar > .wall-toolbar__divider,
+  .wall-toolbar__group:has(.wall-theme-list),
+  .sel-badge,
+  #showRpanelBtn {
+    display: none !important;
+  }
+
+  /* Let the keyboard shortcut hint hide on mobile */
+  .wall-toolbar > span:last-child {
+    display: none !important;
+  }
+
+  /* Wall viewport: takes remaining center height */
+  .wall-viewport {
+    padding: 8px;
+    overflow: hidden;
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+
+  /* Wall wrapper: scaled to fit (transform applied by JS) */
+  .wall-wrapper {
+    transform-origin: top left;
+  }
+}
+
+/* ══════════════════════════════════════════
+   TOUCH TARGET ENFORCEMENT (all mobile)
+   ══════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Ensure all buttons meet 44px minimum */
+  .btn,
+  button,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Except very intentionally small decorative ones */
+  .wall-ref-handle,
+  .mob-sheet__handle {
+    min-height: 0;
+    min-width: 0;
+  }
+
+  /* Bigger frame resize handles for touch */
+  .wframe__rh {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  /* Bigger corner ref overlay handles */
+  .wall-ref-handle {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Right panel spacing on mobile */
+  .rpanel {
+    padding: 4px 16px 16px !important;
+  }
+
+  .rpanel__group {
+    gap: 8px;
+  }
+
+  /* Input range sliders: taller hit area */
+  input[type="range"] {
+    height: 24px;
+    accent-color: var(--color-navy);
+  }
+
+  /* Frame shelf: horizontal scroll strip on mobile */
+  .frame-shelf {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Modals: full-width on mobile */
+  .step-modal {
+    padding: 20px 16px;
+    border-radius: 16px 16px 0 0;
+    max-height: 85vh;
+    margin: auto 0 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .step-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  /* Welcome modal: full-width card on mobile */
+  .welcome-card {
+    padding: 36px 24px 32px;
+    border-radius: 20px 20px 0 0;
+    max-width: 100%;
+    margin: auto 0 0;
+  }
+
+  .welcome-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+}
+
+/* ══════════════════════════════════════════
+   TOUR — mobile tooltip adjustments
+   ══════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Tour tooltips snap to bottom of screen on mobile */
+  .tour-tooltip {
+    position: fixed !important;
+    bottom: calc(var(--mob-nav-height) + env(safe-area-inset-bottom, 0px) + 12px) !important;
+    left: 12px !important;
+    right: 12px !important;
+    width: auto !important;
+    top: auto !important;
+    transform: translateY(8px) !important;
+    border-radius: 16px;
+    padding: 20px 18px 16px;
+  }
+
+  .tour-tooltip--visible {
+    transform: translateY(0) !important;
+  }
+
+  .tour-tooltip__title {
+    font-size: 14px;
+  }
+
+  .tour-tooltip__body {
+    font-size: 13px;
+  }
+
+  .tour-tooltip__next,
+  .tour-tooltip__close {
+    min-height: 40px;
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+}
+
+/* ══════════════════════════════════════════
+   PREVENT OVERSCROLL / PULL-TO-REFRESH
+   ══════════════════════════════════════════ */
+@media (max-width: 768px) {
+  #app {
+    overscroll-behavior: none;
+    /* Prevent text selection during drag */
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Re-enable selection in inputs */
+  input,
+  textarea {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  /* Wall: prevent browser handling touch (panning/zooming the page) */
+  #wall {
+    touch-action: none;
+  }
+}

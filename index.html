@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>FrameRoom — Arrange. Visualize. Hang.</title>
   <meta name="description" content="Plan your gallery wall. Arrange your art. Hang with confidence.">
 
@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/wall.css">
   <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/mobile.css">
 
   <!-- TAN Kindred: commercial font — replace src with your licensed copy -->
   <style>
@@ -556,5 +557,52 @@
     }
   }
 </script>
+
+<!-- ══════════════════════════════════════════
+     MOBILE: Sheet backdrop
+     ══════════════════════════════════════════ -->
+<div id="mobSheetBackdrop" class="mob-sheet-backdrop" aria-hidden="true"></div>
+
+<!-- ══════════════════════════════════════════
+     MOBILE: Wall color sheet
+     ══════════════════════════════════════════ -->
+<div id="mobColorSheet" class="mob-color-sheet" role="dialog" aria-label="Wall color">
+  <div class="mob-sheet__handle" aria-hidden="true"></div>
+  <p class="mob-sheet__title">Wall color</p>
+  <div class="wall-theme-list mob-color-sheet__swatches" role="group" aria-label="Choose wall color">
+    <button class="wall-theme-btn" data-theme="white"     style="background:#ffffff" title="White" aria-label="White wall"></button>
+    <button class="wall-theme-btn" data-theme="off-white" style="background:#f8f6f1" title="Off-white" aria-label="Off-white wall"></button>
+    <button class="wall-theme-btn" data-theme="linen"     style="background:#f2ede5" title="Linen" aria-label="Linen wall"></button>
+    <button class="wall-theme-btn" data-theme="sage"      style="background:#d4ddd0" title="Sage" aria-label="Sage wall"></button>
+    <button class="wall-theme-btn" data-theme="dark"      style="background:#1a1a1a" title="Dark" aria-label="Dark wall"></button>
+  </div>
+  <div class="mob-color-sheet__custom">
+    <input type="color" id="mobWallColorInput" value="#ffffff" aria-label="Custom wall color">
+    <input type="text"  id="mobWallColorHex"   placeholder="#hex" maxlength="7" aria-label="Hex color code" autocomplete="off">
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MOBILE: Bottom navigation
+     ══════════════════════════════════════════ -->
+<nav class="mob-nav" id="mobNav" aria-label="Main navigation">
+  <button class="mob-nav__btn" data-sheet="upload" aria-label="Upload frames">
+    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8M8 12l4-4 4 4"/></svg>
+    <span>Upload</span>
+  </button>
+  <button class="mob-nav__btn" data-sheet="layouts" aria-label="Layouts">
+    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+    <span>Layouts</span>
+  </button>
+  <button class="mob-nav__btn" data-sheet="color" aria-label="Wall color">
+    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18" fill="currentColor" opacity=".18"/><circle cx="12" cy="7" r="1.5" fill="currentColor"/><circle cx="17" cy="12" r="1.5" fill="currentColor"/><circle cx="7"  cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="17" r="1.5" fill="currentColor"/></svg>
+    <span>Color</span>
+  </button>
+  <button class="mob-nav__btn" data-sheet="props" id="mobPropsNavBtn" aria-label="Frame properties">
+    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9"  cy="6"  r="2" fill="white"/><circle cx="15" cy="12" r="2" fill="white"/><circle cx="9"  cy="18" r="2" fill="white"/></svg>
+    <span>Edit</span>
+  </button>
+</nav>
+
 </body>
 </html>

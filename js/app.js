@@ -32,11 +32,17 @@ document.addEventListener('DOMContentLoaded', () => {
   setupWallPhotoPicker();
   setupRefHandles();
   initTour();
+  scaleWall();
+  setupMobileNav();
 
   // Initial state
   updateDropHint();
   applyWallSize();
   redrawGrid();
+});
+
+window.addEventListener('resize', () => {
+  scaleWall();
 });
 
 /* ──────────────────────────────────────────
@@ -109,7 +115,7 @@ function setupAllUploadZones() {
    ────────────────────────────────────────── */
 function setupToolbar() {
   const wallSz = document.getElementById('wallSz');
-  if (wallSz) wallSz.addEventListener('change', applyWallSize);
+  if (wallSz) wallSz.addEventListener('change', () => { applyWallSize(); scaleWall(); });
 
   const gridSz = document.getElementById('gridSz');
   if (gridSz) gridSz.addEventListener('change', redrawGrid);
@@ -280,6 +286,13 @@ export function ensureRpanelOpen() {
   if (!rpanel) return;
   rpanel.classList.remove('collapsed');
   if (showBtn) showBtn.style.display = 'none';
+  // On mobile, open as bottom sheet
+  if (window.innerWidth <= 768) {
+    rpanel.classList.add('mob-open');
+    document.getElementById('mobSheetBackdrop')?.classList.add('visible');
+    // Highlight Edit button in bottom nav
+    document.querySelectorAll('.mob-nav__btn').forEach(b => b.classList.toggle('active', b.dataset.sheet === 'props'));
+  }
 }
 
 /* ──────────────────────────────────────────
@@ -523,9 +536,10 @@ function setupRefHandles() {
   let _startDist  = 0;
 
   handles.querySelectorAll('.wall-ref-handle').forEach(handle => {
-    handle.addEventListener('mousedown', e => {
+    handle.addEventListener('pointerdown', e => {
       e.stopPropagation();
       e.preventDefault();
+      handle.setPointerCapture(e.pointerId);
       const wall = document.getElementById('wall');
       if (!wall) return;
       const r = wall.getBoundingClientRect();
@@ -550,12 +564,123 @@ function setupRefHandles() {
 
       const onUp = () => {
         _dragging = false;
-        window.removeEventListener('mousemove', onMove);
-        window.removeEventListener('mouseup',   onUp);
+        handle.removeEventListener('pointermove', onMove);
+        handle.removeEventListener('pointerup',   onUp);
       };
 
-      window.addEventListener('mousemove', onMove);
-      window.addEventListener('mouseup',   onUp);
+      handle.addEventListener('pointermove', onMove);
+      handle.addEventListener('pointerup',   onUp);
     });
+  });
+}
+
+/* ──────────────────────────────────────────
+   WALL SCALE (fits wall to mobile viewport)
+   ────────────────────────────────────────── */
+export function scaleWall() {
+  const wallEl  = document.getElementById('wall');
+  const wrapper = document.querySelector('.wall-wrapper');
+  if (!wallEl || !wrapper) return;
+
+  const isMobile = window.innerWidth <= 768;
+
+  if (!isMobile) {
+    wrapper.style.transform    = '';
+    wrapper.style.height       = '';
+    wrapper.style.width        = '';
+    wrapper.style.marginBottom = '';
+    state.wallScale = 1;
+    return;
+  }
+
+  const vp     = document.getElementById('wallViewport');
+  const availW = (vp?.clientWidth  || window.innerWidth)  - 16;
+  const wallW  = wallEl.offsetWidth  || parseInt(wallEl.style.width,  10) || 820;
+  const wallH  = wallEl.offsetHeight || parseInt(wallEl.style.height, 10) || 540;
+  const scale  = Math.min(1, availW / wallW);
+
+  wrapper.style.transformOrigin = 'top left';
+  wrapper.style.transform       = `scale(${scale})`;
+  wrapper.style.width           = wallW + 'px';
+  // Collapse the extra space transform leaves behind
+  wrapper.style.marginBottom    = Math.ceil(wallH * (scale - 1)) + 'px';
+
+  state.wallScale = scale;
+}
+
+/* ──────────────────────────────────────────
+   MOBILE BOTTOM NAV + BOTTOM SHEETS
+   ────────────────────────────────────────── */
+function closeAllMobSheets() {
+  document.getElementById('sidebar')?.classList.remove('mob-open');
+  document.getElementById('rpanel')?.classList.remove('mob-open');
+  document.getElementById('mobColorSheet')?.classList.remove('mob-open');
+  document.getElementById('mobSheetBackdrop')?.classList.remove('visible');
+  document.querySelectorAll('.mob-nav__btn').forEach(b => b.classList.remove('active'));
+}
+
+function setupMobileNav() {
+  const backdrop = document.getElementById('mobSheetBackdrop');
+  backdrop?.addEventListener('click', closeAllMobSheets);
+
+  // Swipe-down to close: track touch start Y on each sheet
+  ['sidebar', 'rpanel', 'mobColorSheet'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    let startY = 0;
+    el.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
+    el.addEventListener('touchend',   e => {
+      const dy = e.changedTouches[0].clientY - startY;
+      if (dy > 60) closeAllMobSheets(); // swipe down 60px closes sheet
+    }, { passive: true });
+  });
+
+  document.querySelectorAll('.mob-nav__btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (window.innerWidth > 768) return; // desktop: no-op
+      const target  = btn.dataset.sheet;
+      const sidebar = document.getElementById('sidebar');
+      const rpanel  = document.getElementById('rpanel');
+      const color   = document.getElementById('mobColorSheet');
+
+      // Toggling same open sheet closes it
+      const alreadyOpen = btn.classList.contains('active');
+      closeAllMobSheets();
+      if (alreadyOpen) return;
+
+      btn.classList.add('active');
+      document.getElementById('mobSheetBackdrop')?.classList.add('visible');
+
+      if (target === 'upload') {
+        document.querySelector('.sidebar__tab[data-target="tabFrames"]')?.click();
+        sidebar?.classList.add('mob-open');
+      } else if (target === 'layouts') {
+        document.querySelector('.sidebar__tab[data-target="tabLayouts"]')?.click();
+        sidebar?.classList.add('mob-open');
+      } else if (target === 'color') {
+        color?.classList.add('mob-open');
+      } else if (target === 'props') {
+        rpanel?.classList.add('mob-open');
+      }
+    });
+  });
+
+  // Sync wall color swatches in mobile color sheet with main theme buttons
+  document.querySelectorAll('.mob-color-sheet .wall-theme-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const theme = btn.dataset.theme;
+      import('./wall.js').then(m => m.setWallTheme(theme));
+      document.querySelectorAll('.wall-theme-btn').forEach(b => b.classList.toggle('active', b.dataset.theme === theme));
+    });
+  });
+
+  // Sync custom color in mobile sheet
+  const mobColorInput = document.getElementById('mobWallColorInput');
+  const mobColorHex   = document.getElementById('mobWallColorHex');
+  mobColorInput?.addEventListener('input', () => window.applyWallColorHex?.(mobColorInput.value));
+  mobColorHex?.addEventListener('change', () => {
+    let v = mobColorHex.value.trim();
+    if (!v.startsWith('#')) v = '#' + v;
+    window.applyWallColorHex?.(v);
   });
 }

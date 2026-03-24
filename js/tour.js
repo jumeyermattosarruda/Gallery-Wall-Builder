@@ -130,8 +130,13 @@ function _positionTooltip(step, target) {
   tt.style.display = '';
   tt.classList.remove('tour-tooltip--visible');
 
-  // Position
-  if (!target) {
+  // On mobile, CSS pins the tooltip to the bottom — no JS positioning needed
+  if (window.innerWidth <= 768) {
+    tt.style.top    = '';
+    tt.style.left   = '';
+    tt.style.right  = '';
+    tt.style.transform = '';
+  } else if (!target) {
     _centerTooltip(tt);
   } else {
     _autoPosition(tt, target, step.position || 'bottom');
