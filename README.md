@@ -8,7 +8,7 @@ A browser-based gallery wall planner — upload photos of your art, remove backg
  **Want to know how this was built?** 
 Learn how it was done and how to avoid the mistakes we made along the way (with bonus of prompts included to build your own project).
 
-[Read the Article](./How To Build This.md)
+[Read the Article](How-To-Build-This.md)
 
 ---
 
