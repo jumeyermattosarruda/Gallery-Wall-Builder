@@ -11,6 +11,7 @@ import { initRefPhoto, setRefPhoto } from './refPhoto.js';
 import { refreshLibrary } from './library.js';
 import { state } from './state.js';
 import { initTour } from './tour.js';
+import { capture } from './analytics.js';
 
 /* ──────────────────────────────────────────
    INIT
@@ -116,7 +117,11 @@ function setupAllUploadZones() {
    ────────────────────────────────────────── */
 function setupToolbar() {
   const wallSz = document.getElementById('wallSz');
-  if (wallSz) wallSz.addEventListener('change', () => { applyWallSize(); scaleWall(); });
+  if (wallSz) wallSz.addEventListener('change', () => {
+    applyWallSize();
+    scaleWall();
+    capture('wall_size_changed', { size: wallSz.value, label: wallSz.options[wallSz.selectedIndex]?.text });
+  });
 
   const gridSz = document.getElementById('gridSz');
   if (gridSz) gridSz.addEventListener('change', redrawGrid);
@@ -137,7 +142,10 @@ function setupToolbar() {
 function setupTopbarActions() {
   document.getElementById('clearWallBtn')?.addEventListener('click', () => {
     if (state.wItems.length === 0) return;
-    if (confirm('Clear all frames from the wall?')) clearWall();
+    if (confirm('Clear all frames from the wall?')) {
+      capture('wall_cleared', { frame_count: state.wItems.length });
+      clearWall();
+    }
   });
 
   document.getElementById('exportBtn')?.addEventListener('click', exportWallPng);
@@ -154,6 +162,7 @@ function setupWallThemes() {
       const theme = btn.dataset.theme;
       setWallTheme(theme);
       document.querySelectorAll('.wall-theme-btn').forEach(b => b.classList.toggle('active', b === btn));
+      capture('wall_theme_changed', { theme });
     });
   });
 

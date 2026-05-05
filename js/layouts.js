@@ -4,6 +4,7 @@
 
 import { state } from './state.js';
 import { clearWall, addToWallAt, mountPlaceholder } from './wall.js';
+import { capture } from './analytics.js';
 
 /* ──────────────────────────────────────────
    LAYOUT DEFINITIONS
@@ -256,6 +257,14 @@ export function applyLayout(layout) {
         frameStyle: item.frameStyle,
       };
     }
+  });
+
+  capture('layout_applied', {
+    layout_id:   layout.id,
+    layout_name: layout.name,
+    layout_tag:  layout.tag,
+    slot_count:  layout.slots.length,
+    frame_count: state.frames.length,
   });
 
   clearWall();

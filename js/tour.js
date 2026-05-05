@@ -3,6 +3,7 @@
    ============================================================ */
 
 import { TOUR_STEPS } from './tourSteps.js';
+import { capture } from './analytics.js';
 
 const STORAGE_KEY = 'frameroom_tour_done';
 
@@ -58,6 +59,7 @@ function _wireWelcomeModal() {
 export function startTourNow() {
   _currentStep = 0;
   _active      = true;
+  capture('tour_started');
   _showOverlay();
   _renderStep(_currentStep);
 }
