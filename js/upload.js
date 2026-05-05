@@ -6,6 +6,7 @@ import { state, nextId } from './state.js';
 import { removeBackground } from './imageProcess.js';
 import { refreshLibrary } from './library.js';
 import { toast, setProcessingProgress } from './app.js';
+import { capture } from './analytics.js';
 
 /* Accepted formats (the file input accept string) */
 export const ACCEPTED = 'image/jpeg,image/png,image/webp,image/gif,image/bmp,image/heic,image/heif,.heic,.heif,.jpg,.jpeg,.png,.webp';
@@ -55,6 +56,8 @@ export async function loadFiles(files) {
 
   setProcessingProgress(1);
   setTimeout(() => setProcessingProgress(0), 800);
+
+  capture('photos_uploaded', { count: arr.length });
 }
 
 /**
@@ -66,6 +69,7 @@ export async function loadRefPhoto(file) {
     const blob = await decodeFile(file);
     const dims = await getImageDimensions(blob);
     const url  = URL.createObjectURL(blob);
+    capture('reference_photo_uploaded');
     return { src: url, w: dims.w, h: dims.h };
   } catch (err) {
     console.error('Could not load reference photo', err);

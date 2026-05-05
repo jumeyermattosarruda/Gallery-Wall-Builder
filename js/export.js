@@ -3,6 +3,7 @@
    ============================================================ */
 
 import { state, getFrame } from './state.js';
+import { capture } from './analytics.js';
 
 /**
  * Renders the wall to a high-resolution PNG and triggers download.
@@ -29,6 +30,13 @@ export async function exportWallPng() {
 
   // Draw each frame
   await Promise.all(state.wItems.map(item => drawItem(ctx, item)));
+
+  capture('wall_exported', {
+    frame_count:  state.wItems.length,
+    wall_width:   W,
+    wall_height:  H,
+    active_layout: state.activeLayoutId,
+  });
 
   // Download
   canvas.toBlob(blob => {

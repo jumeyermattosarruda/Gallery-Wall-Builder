@@ -5,6 +5,7 @@
 import { state, nextId, getFrame, getWItem } from './state.js';
 import { updateRightPanel } from './properties.js';
 import { refreshLibrary } from './library.js';
+import { capture } from './analytics.js';
 
 /* ──────────────────────────────────────────
    CONSTANTS
@@ -233,6 +234,7 @@ export function addToWall(fid, atX, atY) {
   updateDropHint();
   refreshLibrary();
   selectItem(item.id);
+  capture('frame_added_to_wall', { total_frames_on_wall: state.wItems.length });
 }
 
 /* Add with explicit position & size (used by layout engine).
@@ -701,6 +703,7 @@ export function deselect() {
    ────────────────────────────────────────── */
 export function deleteSelected() {
   if (!state.selId) return;
+  capture('frame_deleted', { remaining_frames: state.wItems.length - 1 });
   saveHistory();
   removeWItem(state.selId);
   state.selId = null;
